@@ -85,23 +85,23 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
+      <div className="bg-white border-b border-gray-200 px-4 md:px-6 lg:px-8 py-3">
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="text-gray-400 hover:text-gray-600">
             ←
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Notifications</h1>
-            <p className="text-xs text-gray-500">Preview of all notification types</p>
+            <h1 className="text-lg lg:text-xl font-bold text-gray-900">Notifications</h1>
+            <p className="text-xs lg:text-sm text-gray-500">Preview of all notification types</p>
           </div>
         </div>
       </div>
 
       {/* Rules callout */}
-      <div className="px-4 pt-3">
-        <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3">
-          <h3 className="text-xs font-bold text-amber-800 mb-1">NOTIFICATION RULES</h3>
-          <ul className="text-[10px] text-amber-700 space-y-0.5">
+      <div className="px-4 md:px-6 lg:px-8 pt-3">
+        <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 md:px-5 lg:px-6 py-3 lg:py-4">
+          <h3 className="text-xs lg:text-sm font-bold text-amber-800 mb-1">NOTIFICATION RULES</h3>
+          <ul className="text-[10px] lg:text-xs text-amber-700 space-y-0.5">
             <li>• Never send on a dry, uneventful day</li>
             <li>• Every notification must be actionable</li>
             <li>• Max 2 per day, ever</li>
@@ -111,29 +111,26 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {/* Notification previews */}
-      <div className="px-4 py-3 space-y-3">
+      {/* Notification previews — 2-col grid on desktop */}
+      <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4 grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
         {notifications.map((n) => (
           <div key={n.id}>
             {/* Type label */}
             <div className="flex items-center gap-2 mb-1.5">
               <div className={`w-2 h-2 rounded-full ${urgencyDot[n.urgency]}`} />
-              <span className="text-[10px] font-bold tracking-wide text-gray-400">
+              <span className="text-[10px] lg:text-xs font-bold tracking-wide text-gray-400">
                 {n.type.toUpperCase()}
               </span>
-              <span className="text-[10px] text-gray-400">· {n.time}</span>
+              <span className="text-[10px] lg:text-xs text-gray-400">· {n.time}</span>
             </div>
 
             {/* Phone notification mockup */}
-            <div className={`rounded-xl border ${urgencyStyles[n.urgency]} px-4 py-3 shadow-sm`}>
-              {/* App icon + title row */}
+            <div className={`rounded-xl border ${urgencyStyles[n.urgency]} px-4 md:px-5 lg:px-6 py-3 lg:py-4 shadow-sm`}>
               <div className="flex items-start gap-2">
-                <span className="text-lg shrink-0">{n.icon}</span>
+                <span className="text-lg lg:text-xl shrink-0">{n.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-900">{n.title}</span>
-                  </div>
-                  <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
+                  <span className="text-xs lg:text-sm font-bold text-gray-900">{n.title}</span>
+                  <p className="text-xs lg:text-sm text-gray-600 leading-relaxed mt-0.5">
                     {n.body}
                   </p>
                 </div>
@@ -144,10 +141,10 @@ export default function NotificationsPage() {
       </div>
 
       {/* Escalation timeline */}
-      <div className="px-4 py-3">
+      <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-gray-100">
-            <h3 className="text-xs font-bold tracking-wide text-gray-500">
+          <div className="px-4 md:px-5 lg:px-6 py-2.5 border-b border-gray-100">
+            <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500">
               CHASE ALERT ESCALATION TIMELINE
             </h3>
           </div>
@@ -158,14 +155,14 @@ export default function NotificationsPage() {
               { days: "3-4 days", icon: "🔴", label: "BOOK NOW", text: "Forecast locked in. Go/no-go moment. Flights rising.", color: "text-red-700" },
               { days: "1-2 days", icon: "❄️", label: "ARRIVING", text: "Storm hitting. If you booked, you're set.", color: "text-blue-700" },
             ].map((s) => (
-              <div key={s.days} className="px-4 py-2.5 flex items-start gap-3">
-                <span className="text-base shrink-0">{s.icon}</span>
+              <div key={s.days} className="px-4 md:px-5 lg:px-6 py-2.5 lg:py-3 flex items-start gap-3">
+                <span className="text-base lg:text-lg shrink-0">{s.icon}</span>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className={`text-[10px] font-bold ${s.color}`}>{s.label}</span>
-                    <span className="text-[10px] text-gray-400">{s.days} out</span>
+                    <span className={`text-[10px] lg:text-xs font-bold ${s.color}`}>{s.label}</span>
+                    <span className="text-[10px] lg:text-xs text-gray-400">{s.days} out</span>
                   </div>
-                  <p className="text-xs text-gray-600">{s.text}</p>
+                  <p className="text-xs lg:text-sm text-gray-600">{s.text}</p>
                 </div>
               </div>
             ))}
@@ -174,8 +171,8 @@ export default function NotificationsPage() {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-6 text-center">
-        <p className="text-[10px] text-gray-400">POC — Notification Designs</p>
+      <div className="px-4 md:px-6 lg:px-8 py-6 text-center">
+        <p className="text-[10px] lg:text-xs text-gray-400">POC — Notification Designs</p>
       </div>
     </div>
   );
