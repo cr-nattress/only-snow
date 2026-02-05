@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePersona } from "@/context/PersonaContext";
+import { personas, getPersonaInfo } from "@/data/personas";
 
 const passes = [
   { id: "epic", label: "Epic", color: "bg-indigo-600" },
@@ -45,7 +47,10 @@ export default function SettingsPage() {
 
   const [editingLocation, setEditingLocation] = useState(false);
   const [editingPass, setEditingPass] = useState(false);
+  const [editingPersona, setEditingPersona] = useState(false);
 
+  const { persona, setPersona } = usePersona();
+  const currentPersona = getPersonaInfo(persona);
   const currentPass = passes.find((p) => p.id === pass);
 
   const toggleNotification = (id: string) => {
@@ -169,6 +174,74 @@ export default function SettingsPage() {
               {!editingPass && (
                 <button
                   onClick={() => setEditingPass(true)}
+                  className="text-xs lg:text-sm text-blue-600 font-medium"
+                >
+                  Change
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Skier Type */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-4 md:px-5 lg:px-6 py-2.5 lg:py-3 border-b border-gray-100">
+            <h2 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500">SKIER TYPE</h2>
+          </div>
+          <div className="px-4 md:px-5 lg:px-6 py-3 lg:py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm lg:text-base font-medium text-gray-900">Your Persona</div>
+                {editingPersona ? (
+                  <div className="mt-3 space-y-2">
+                    {personas.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setPersona(p.id);
+                          setEditingPersona(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
+                          persona === p.id
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">
+                            {p.id === "powder-hunter" && "❄️"}
+                            {p.id === "family-planner" && "👨‍👩‍👧"}
+                            {p.id === "weekend-warrior" && "⏰"}
+                            {p.id === "destination-traveler" && "✈️"}
+                            {p.id === "beginner" && "⭐"}
+                          </span>
+                          <div>
+                            <div className="text-xs lg:text-sm font-medium text-gray-900">{p.label}</div>
+                            <div className="text-[10px] lg:text-xs text-gray-500">{p.description}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-lg">
+                      {persona === "powder-hunter" && "❄️"}
+                      {persona === "family-planner" && "👨‍👩‍👧"}
+                      {persona === "weekend-warrior" && "⏰"}
+                      {persona === "destination-traveler" && "✈️"}
+                      {persona === "beginner" && "⭐"}
+                    </span>
+                    <div>
+                      <span className="text-xs lg:text-sm text-gray-700">{currentPersona.label}</span>
+                      <div className="text-[10px] lg:text-xs text-gray-400">{currentPersona.focus}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {!editingPersona && (
+                <button
+                  onClick={() => setEditingPersona(true)}
                   className="text-xs lg:text-sm text-blue-600 font-medium"
                 >
                   Change

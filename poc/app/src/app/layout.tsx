@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "OnlySnow",
@@ -39,7 +40,7 @@ export default function RootLayout({
             </Link>
           </header>
 
-          {children}
+          <Providers>{children}</Providers>
         </div>
       </body>
     </html>

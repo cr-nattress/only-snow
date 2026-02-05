@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePersona } from "@/context/PersonaContext";
+import { personas } from "@/data/personas";
+import { Persona } from "@/data/types";
 
-type Step = "location" | "pass" | "radius" | "chase" | "confirm";
+type Step = "location" | "pass" | "radius" | "chase" | "persona" | "confirm";
 
 const passes = [
   { id: "epic", label: "Epic", color: "bg-indigo-600" },
@@ -34,14 +37,16 @@ const mockDetectedResorts = [
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { setPersona: setGlobalPersona } = usePersona();
   const [step, setStep] = useState<Step>("location");
   const [location, setLocation] = useState("");
   const [pass, setPass] = useState("");
   const [radius, setRadius] = useState(120);
   const [chase, setChase] = useState("");
+  const [selectedPersona, setSelectedPersona] = useState<Persona | "">("");
 
-  const stepIndex = ["location", "pass", "radius", "chase", "confirm"].indexOf(step);
-  const totalSteps = 4;
+  const stepIndex = ["location", "pass", "radius", "chase", "persona", "confirm"].indexOf(step);
+  const totalSteps = 5;
 
   function next() {
     switch (step) {
@@ -52,9 +57,15 @@ export default function OnboardingPage() {
         setStep("radius");
         break;
       case "radius":
-        setStep(pass !== "none" ? "chase" : "confirm");
+        setStep(pass !== "none" ? "chase" : "persona");
         break;
       case "chase":
+        setStep("persona");
+        break;
+      case "persona":
+        if (selectedPersona) {
+          setGlobalPersona(selectedPersona);
+        }
         setStep("confirm");
         break;
       case "confirm":
@@ -74,8 +85,11 @@ export default function OnboardingPage() {
       case "chase":
         setStep("radius");
         break;
-      case "confirm":
+      case "persona":
         setStep(pass !== "none" ? "chase" : "radius");
+        break;
+      case "confirm":
+        setStep("persona");
         break;
     }
   }
@@ -235,7 +249,48 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 5: Confirmation */}
+        {/* Step 5: Persona */}
+        {step === "persona" && (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                What kind of skier are you?
+              </h1>
+              <p className="text-sm lg:text-base text-gray-500 mt-1">
+                We&apos;ll personalize your experience based on what matters to you.
+              </p>
+            </div>
+            <div className="space-y-3">
+              {personas.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedPersona(p.id)}
+                  className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${
+                    selectedPersona === p.id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">
+                      {p.id === "powder-hunter" && "❄️"}
+                      {p.id === "family-planner" && "👨‍👩‍👧"}
+                      {p.id === "weekend-warrior" && "⏰"}
+                      {p.id === "destination-traveler" && "✈️"}
+                      {p.id === "beginner" && "⭐"}
+                    </span>
+                    <div>
+                      <div className="text-sm lg:text-base font-medium text-gray-900">{p.label}</div>
+                      <div className="text-xs lg:text-sm text-gray-500 mt-0.5">{p.description}</div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 6: Confirmation */}
         {step === "confirm" && (
           <div className="space-y-6">
             <div>
@@ -278,7 +333,8 @@ export default function OnboardingPage() {
           disabled={
             (step === "location" && !location) ||
             (step === "pass" && !pass) ||
-            (step === "chase" && !chase)
+            (step === "chase" && !chase) ||
+            (step === "persona" && !selectedPersona)
           }
           className="w-full py-3.5 bg-blue-600 text-white text-sm lg:text-base font-semibold rounded-xl disabled:opacity-30 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
         >

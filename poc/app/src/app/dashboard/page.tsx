@@ -2,12 +2,15 @@
 
 import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { scenarios } from "@/data/scenarios";
-import { TimeWindow } from "@/data/types";
+import { TimeWindow, Persona } from "@/data/types";
 import ResortTable from "@/components/ResortTable";
 import AiAnalysis from "@/components/ExpertTake";
 import PromptInput from "@/components/ScenarioSwitcher";
 import TimeToggle from "@/components/TimeToggle";
+import { usePersona } from "@/context/PersonaContext";
+import { getPersonaInfo } from "@/data/personas";
 import type { MapResort } from "@/components/ResortMap";
 
 const ResortMap = dynamic(() => import("@/components/ResortMap"), { ssr: false });
@@ -17,6 +20,19 @@ export default function DashboardPage() {
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("10day");
 
   const scenario = scenarios.find((s) => s.id === activeScenarioId) || scenarios[0];
+  const { persona } = usePersona();
+  const personaInfo = getPersonaInfo(persona);
+
+  function getPersonaEmoji(p: Persona): string {
+    switch (p) {
+      case "powder-hunter": return "❄️";
+      case "family-planner": return "👨‍👩‍👧";
+      case "weekend-warrior": return "⏰";
+      case "destination-traveler": return "✈️";
+      case "beginner": return "⭐";
+      default: return "❄️";
+    }
+  }
 
   // Get per-window data
   const windowData = scenario.timeWindows[timeWindow];
@@ -73,9 +89,17 @@ export default function DashboardPage() {
 
       {/* Main content */}
       <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4 space-y-3 lg:space-y-4">
-        {/* Time Toggle */}
-        <div className="flex justify-center">
+        {/* Time Toggle + Persona Badge */}
+        <div className="flex items-center justify-center gap-3">
           <TimeToggle active={timeWindow} onChange={setTimeWindow} />
+          <Link
+            href="/settings"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            title={`${personaInfo.label}: ${personaInfo.focus}`}
+          >
+            <span className="text-sm">{getPersonaEmoji(persona)}</span>
+            <span className="text-xs font-medium text-gray-600 hidden md:inline">{personaInfo.label}</span>
+          </Link>
         </div>
 
         {/* Your Resorts — storm banner + ranked resort list */}

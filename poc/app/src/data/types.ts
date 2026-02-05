@@ -1,5 +1,20 @@
 export type PassType = "epic" | "ikon" | "indy" | "independent";
 
+export type Persona =
+  | "powder-hunter"
+  | "family-planner"
+  | "weekend-warrior"
+  | "destination-traveler"
+  | "beginner";
+
+export interface PersonaInfo {
+  id: Persona;
+  label: string;
+  icon: string;
+  description: string;
+  focus: string;
+}
+
 export interface Resort {
   id: string;
   name: string;
@@ -96,6 +111,7 @@ export interface OnboardingState {
   pass: PassType | "multi" | "none";
   driveRadius: number;
   chaseWillingness: "anywhere" | "driving" | "no";
+  persona: Persona;
 }
 
 export interface DailyForecast {
