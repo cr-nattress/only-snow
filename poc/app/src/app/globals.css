@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Primary blue palette based on #00AFF0 */
+  --color-blue-50: #F2FBFE;
+  --color-blue-100: #E6F7FE;
+  --color-blue-200: #BFEBFB;
+  --color-blue-300: #80D7F8;
+  --color-blue-400: #40C3F4;
+  --color-blue-500: #00AFF0;
+  --color-blue-600: #0095CC;
+  --color-blue-700: #007BA8;
+  --color-blue-800: #006084;
+  --color-blue-900: #004660;
+  --color-blue-950: #002C3C;
+
+  --color-snow: #00AFF0;
+  --color-snow-light: #E6F7FE;
+  --color-storm-quiet: #9ca3af;
+  --color-storm-moderate: #eab308;
+  --color-storm-significant: #f97316;
+  --color-storm-chase: #ef4444;
+  --color-pass-on: #22c55e;
+  --color-pass-off: #9ca3af;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f9fafb;
+  --color-border: #e5e7eb;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-blue-400);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Smooth resort row reordering animation */
+.resort-row {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}

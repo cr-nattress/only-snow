@@ -69,7 +69,7 @@ export default function DashboardPage() {
       <ResortMap resorts={mapResorts} />
 
       {/* Main content */}
-      <div className="px-4 py-3 space-y-3">
+      <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4 space-y-3 lg:space-y-4">
         {/* Your Resorts — storm banner + ranked resort list */}
         <ResortTable
           resorts={scenario.yourResorts}
@@ -84,7 +84,7 @@ export default function DashboardPage() {
       </div>
 
       {/* POC footer */}
-      <div className="px-4 py-6 text-center">
+      <div className="px-4 md:px-6 lg:px-8 py-6 text-center">
         <p className="text-[10px] text-blue-200">
           POC — OnlySnow · {scenario.name} · {dateLabel}
         </p>

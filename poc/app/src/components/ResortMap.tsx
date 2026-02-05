@@ -70,7 +70,7 @@ export default function ResortMap({ resorts }: { resorts: MapResort[] }) {
   ];
 
   return (
-    <div className="mx-4 mt-3 h-48 rounded-xl overflow-hidden border border-white/10">
+    <div className="mx-4 md:mx-6 lg:mx-8 mt-3 h-48 md:h-64 lg:h-80 rounded-xl overflow-hidden border border-white/10">
       <MapContainer
         center={center}
         zoom={7}
