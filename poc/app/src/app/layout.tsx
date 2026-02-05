@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,9 +31,12 @@ export default function RootLayout({
                 Only<span className="text-blue-100">Snow</span>
               </span>
             </div>
-            <button className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-white/20 flex items-center justify-center">
+            <Link
+              href="/settings"
+              className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+            >
               <span className="text-sm lg:text-base text-white font-bold">CN</span>
-            </button>
+            </Link>
           </header>
 
           {children}
