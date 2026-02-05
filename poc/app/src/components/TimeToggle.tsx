@@ -14,12 +14,12 @@ const windows: { value: TimeWindow; label: string }[] = [
 
 export default function TimeToggle({ active, onChange }: TimeToggleProps) {
   return (
-    <div className="flex bg-gray-100 rounded-lg p-0.5">
+    <div className="inline-flex bg-gray-100 rounded-lg p-0.5">
       {windows.map((w) => (
         <button
           key={w.value}
           onClick={() => onChange(w.value)}
-          className={`flex-1 text-xs font-medium py-1.5 px-2 rounded-md transition-all ${
+          className={`text-xs lg:text-sm font-medium py-1.5 lg:py-2 px-4 lg:px-6 rounded-md transition-all ${
             active === w.value
               ? "bg-white text-gray-900 shadow-sm"
               : "text-gray-500 hover:text-gray-700"
