@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useSession, signOut } from "next-auth/react";
 import { usePersona } from "@/context/PersonaContext";
 import { personas, getPersonaInfo } from "@/data/personas";
 
@@ -30,6 +32,7 @@ const notificationTypes = [
 ];
 
 export default function SettingsPage() {
+  const { data: session, status } = useSession();
   const [location, setLocation] = useState("Denver, CO");
   const [driveRadius, setDriveRadius] = useState(120);
   const [pass, setPass] = useState("epic");
@@ -64,22 +67,92 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 md:px-6 lg:px-8 py-3">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 md:px-6 lg:px-8 py-3">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="text-gray-400 hover:text-gray-600">
+          <Link href="/dashboard" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             ←
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg lg:text-xl font-bold text-gray-900">Settings</h1>
-            <p className="text-xs lg:text-sm text-gray-500">Manage your ski profile</p>
+            <h1 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+            <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">
+              {session?.user?.name ? `Signed in as ${session.user.name}` : "Manage your ski profile"}
+            </p>
           </div>
-          <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-sm lg:text-base font-bold text-blue-700">CN</span>
+          <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-100 dark:bg-blue-900 overflow-hidden flex items-center justify-center">
+            {session?.user?.image ? (
+              <Image
+                src={session.user.image}
+                alt={session.user.name || "Profile"}
+                width={48}
+                height={48}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-sm lg:text-base font-bold text-blue-700 dark:text-blue-300">
+                {session?.user?.name?.charAt(0).toUpperCase() || "?"}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       <div className="px-4 md:px-6 lg:px-8 py-4 lg:py-6 space-y-4 lg:space-y-6">
+        {/* Account Section */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="px-4 md:px-5 lg:px-6 py-2.5 lg:py-3 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-gray-400">ACCOUNT</h2>
+          </div>
+          <div className="px-4 md:px-5 lg:px-6 py-4 lg:py-5">
+            {status === "authenticated" && session?.user ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 overflow-hidden flex items-center justify-center">
+                    {session.user.image ? (
+                      <Image
+                        src={session.user.image}
+                        alt={session.user.name || "Profile"}
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                        {session.user.name?.charAt(0).toUpperCase() || "?"}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm lg:text-base font-medium text-gray-900 dark:text-gray-100">
+                      {session.user.name}
+                    </div>
+                    <div className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">
+                      {session.user.email}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="w-full py-2.5 px-4 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Sign in to save your settings across devices
+                </p>
+                <Link
+                  href="/auth/signin"
+                  className="inline-block py-2.5 px-6 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Sign in with Google
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Profile Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-4 md:px-5 lg:px-6 py-2.5 lg:py-3 border-b border-gray-100">

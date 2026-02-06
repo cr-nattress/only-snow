@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
 import { usePersona } from "@/context/PersonaContext";
 import { getPersonaInfo } from "@/data/personas";
 import { Persona } from "@/data/types";
@@ -17,7 +19,17 @@ function getPersonaEmoji(p: Persona): string {
   }
 }
 
+function getInitials(name: string | null | undefined): string {
+  if (!name) return "?";
+  const parts = name.split(" ");
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+}
+
 export default function Header() {
+  const { data: session, status } = useSession();
   const { persona } = usePersona();
   const personaInfo = getPersonaInfo(persona);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -30,6 +42,11 @@ export default function Header() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const isAuthenticated = status === "authenticated" && session?.user;
+  const userImage = session?.user?.image;
+  const userName = session?.user?.name;
+  const initials = getInitials(userName);
 
   return (
     <header
@@ -59,12 +76,32 @@ export default function Header() {
         </Link>
 
         {/* Account Icon */}
-        <Link
-          href="/settings"
-          className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-white/20 dark:bg-white/10 flex items-center justify-center hover:bg-white/30 dark:hover:bg-white/20 transition-colors btn-press"
-        >
-          <span className="text-sm lg:text-base text-white font-bold">CN</span>
-        </Link>
+        {isAuthenticated ? (
+          <Link
+            href="/settings"
+            className="w-8 h-8 lg:w-9 lg:h-9 rounded-full overflow-hidden bg-white/20 dark:bg-white/10 flex items-center justify-center hover:ring-2 hover:ring-white/50 transition-all btn-press"
+            title={userName || "Account"}
+          >
+            {userImage ? (
+              <Image
+                src={userImage}
+                alt={userName || "Profile"}
+                width={36}
+                height={36}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-sm lg:text-base text-white font-bold">{initials}</span>
+            )}
+          </Link>
+        ) : (
+          <Link
+            href="/auth/signin"
+            className="px-3 py-1.5 rounded-full bg-white/20 dark:bg-white/10 hover:bg-white/30 dark:hover:bg-white/20 transition-colors btn-press"
+          >
+            <span className="text-xs font-semibold text-white">Sign in</span>
+          </Link>
+        )}
       </div>
     </header>
   );
