@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { usePersona } from "@/context/PersonaContext";
-import { getPersonaInfo } from "@/data/personas";
-import { Persona } from "@/data/types";
+import { getPersonaInfo, getPersonaInfoV2 } from "@/data/personas";
+import { Persona, PersonaType } from "@/data/types";
 
 function getPersonaEmoji(p: Persona): string {
   switch (p) {
@@ -16,6 +16,21 @@ function getPersonaEmoji(p: Persona): string {
     case "destination-traveler": return "✈️";
     case "beginner": return "⭐";
     default: return "❄️";
+  }
+}
+
+function getPersonaTypeEmoji(p: PersonaType): string {
+  switch (p) {
+    case "core-local": return "🎿";
+    case "storm-chaser": return "🌨️";
+    case "family-planner": return "👨‍👩‍👧";
+    case "weekend-warrior": return "⏰";
+    case "resort-loyalist": return "🏔️";
+    case "learning-curve": return "⭐";
+    case "social-skier": return "🍻";
+    case "luxury-seeker": return "✨";
+    case "budget-maximizer": return "💰";
+    default: return "🎿";
   }
 }
 
@@ -30,8 +45,10 @@ function getInitials(name: string | null | undefined): string {
 
 export default function Header() {
   const { data: session, status } = useSession();
-  const { persona } = usePersona();
-  const personaInfo = getPersonaInfo(persona);
+  const { persona, userPersona, effectivePersonaType } = usePersona();
+  const personaInfo = userPersona
+    ? getPersonaInfoV2(userPersona.primary)
+    : getPersonaInfo(persona);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -71,7 +88,7 @@ export default function Header() {
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/20 dark:bg-white/10 hover:bg-white/30 dark:hover:bg-white/20 transition-colors btn-press"
           title={`${personaInfo.label}: ${personaInfo.focus}`}
         >
-          <span className="text-sm">{getPersonaEmoji(persona)}</span>
+          <span className="text-sm">{userPersona ? getPersonaTypeEmoji(effectivePersonaType) : getPersonaEmoji(persona)}</span>
           <span className="text-xs font-medium text-white hidden md:inline">{personaInfo.label}</span>
         </Link>
 

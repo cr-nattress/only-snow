@@ -1,11 +1,45 @@
 export type PassType = "epic" | "ikon" | "indy" | "independent";
 
+// Legacy 5-persona system (kept for backward compatibility)
 export type Persona =
   | "powder-hunter"
   | "family-planner"
   | "weekend-warrior"
   | "destination-traveler"
   | "beginner";
+
+// New 9-persona system
+export type PersonaType =
+  | "core-local"
+  | "storm-chaser"
+  | "family-planner"
+  | "weekend-warrior"
+  | "resort-loyalist"
+  | "learning-curve"
+  | "social-skier"
+  | "luxury-seeker"
+  | "budget-maximizer";
+
+// Signal types collected during onboarding
+export type SkiFrequency = "casual" | "regular" | "core";
+export type GroupType = "solo" | "partner" | "family" | "friends";
+export type DecisionTrigger = "snow" | "time" | "deal" | "planned";
+export type ExperienceLevel = "beginner" | "intermediate" | "advanced" | "expert";
+
+export interface OnboardingSignals {
+  frequency: SkiFrequency;
+  groupType: GroupType;
+  decisionTriggers: DecisionTrigger[];
+  experienceLevel: ExperienceLevel;
+  childAges?: number[];
+}
+
+export interface UserPersona {
+  primary: PersonaType;
+  secondary?: PersonaType;
+  confidence: number;
+  signals: OnboardingSignals;
+}
 
 export interface PersonaInfo {
   id: Persona;

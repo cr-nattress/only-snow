@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { usePersona } from "@/context/PersonaContext";
-import { personas, getPersonaInfo } from "@/data/personas";
+import { getPersonaInfo, personasV2, getPersonaInfoV2 } from "@/data/personas";
 
 const passes = [
   { id: "epic", label: "Epic", color: "bg-indigo-600" },
@@ -52,8 +52,10 @@ export default function SettingsPage() {
   const [editingPass, setEditingPass] = useState(false);
   const [editingPersona, setEditingPersona] = useState(false);
 
-  const { persona, setPersona } = usePersona();
-  const currentPersona = getPersonaInfo(persona);
+  const { persona, userPersona, setUserPersona, effectivePersonaType } = usePersona();
+  const currentPersona = userPersona
+    ? getPersonaInfoV2(userPersona.primary)
+    : getPersonaInfo(persona);
   const currentPass = passes.find((p) => p.id === pass);
 
   const toggleNotification = (id: string) => {
@@ -263,31 +265,43 @@ export default function SettingsPage() {
           </div>
           <div className="px-4 md:px-5 lg:px-6 py-3 lg:py-4">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <div className="text-sm lg:text-base font-medium text-gray-900 dark:text-white">Your Persona</div>
                 {editingPersona ? (
-                  <div className="mt-3 space-y-2">
-                    {personas.map((p) => (
+                  <div className="mt-3 space-y-2 max-h-[50vh] overflow-y-auto">
+                    {personasV2.map((p) => (
                       <button
                         key={p.id}
                         onClick={() => {
-                          setPersona(p.id);
+                          // Update userPersona if it exists, otherwise create a minimal one
+                          if (userPersona) {
+                            setUserPersona({
+                              ...userPersona,
+                              primary: p.id,
+                              confidence: 1.0,
+                            });
+                          } else {
+                            setUserPersona({
+                              primary: p.id,
+                              confidence: 1.0,
+                              signals: {
+                                frequency: "regular",
+                                groupType: "solo",
+                                decisionTriggers: ["snow"],
+                                experienceLevel: "intermediate",
+                              },
+                            });
+                          }
                           setEditingPersona(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
-                          persona === p.id
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:border-slate-600"
+                          effectivePersonaType === p.id
+                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                            : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-xl">
-                            {p.id === "powder-hunter" && "❄️"}
-                            {p.id === "family-planner" && "👨‍👩‍👧"}
-                            {p.id === "weekend-warrior" && "⏰"}
-                            {p.id === "destination-traveler" && "✈️"}
-                            {p.id === "beginner" && "⭐"}
-                          </span>
+                          <span className="text-xl">{p.emoji}</span>
                           <div>
                             <div className="text-xs lg:text-sm font-medium text-gray-900 dark:text-white">{p.label}</div>
                             <div className="text-[10px] lg:text-xs text-gray-500 dark:text-slate-400">{p.description}</div>
@@ -299,11 +313,17 @@ export default function SettingsPage() {
                 ) : (
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-lg">
-                      {persona === "powder-hunter" && "❄️"}
-                      {persona === "family-planner" && "👨‍👩‍👧"}
-                      {persona === "weekend-warrior" && "⏰"}
-                      {persona === "destination-traveler" && "✈️"}
-                      {persona === "beginner" && "⭐"}
+                      {userPersona ? (
+                        getPersonaInfoV2(effectivePersonaType).emoji
+                      ) : (
+                        <>
+                          {persona === "powder-hunter" && "❄️"}
+                          {persona === "family-planner" && "👨‍👩‍👧"}
+                          {persona === "weekend-warrior" && "⏰"}
+                          {persona === "destination-traveler" && "✈️"}
+                          {persona === "beginner" && "⭐"}
+                        </>
+                      )}
                     </span>
                     <div>
                       <span className="text-xs lg:text-sm text-gray-700 dark:text-slate-300">{currentPersona.label}</span>

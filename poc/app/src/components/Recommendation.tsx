@@ -1,13 +1,14 @@
 "use client";
 
-import { Recommendation as RecommendationType, Persona } from "@/data/types";
+import { Recommendation as RecommendationType, Persona, PersonaType } from "@/data/types";
 import { usePersona } from "@/context/PersonaContext";
 
 interface RecommendationProps {
   recommendation: RecommendationType;
 }
 
-function getPersonaHeadline(persona: Persona): { icon: string; text: string } {
+// Legacy persona headline (for backward compat)
+function getPersonaHeadlineLegacy(persona: Persona): { icon: string; text: string } {
   switch (persona) {
     case "powder-hunter":
       return { icon: "❄️", text: "POWDER REPORT" };
@@ -24,7 +25,34 @@ function getPersonaHeadline(persona: Persona): { icon: string; text: string } {
   }
 }
 
-function getPersonaOnPassLabel(persona: Persona): string {
+// New 9-persona headline
+function getPersonaTypeHeadline(persona: PersonaType): { icon: string; text: string } {
+  switch (persona) {
+    case "core-local":
+      return { icon: "🎿", text: "POWDER REPORT" };
+    case "storm-chaser":
+      return { icon: "🌨️", text: "STORM INTEL" };
+    case "family-planner":
+      return { icon: "👨‍👩‍👧", text: "FAMILY PICK" };
+    case "weekend-warrior":
+      return { icon: "⏰", text: "QUICK DECISION" };
+    case "resort-loyalist":
+      return { icon: "🏔️", text: "YOUR MOUNTAIN" };
+    case "learning-curve":
+      return { icon: "⭐", text: "BEST FOR LEARNING" };
+    case "social-skier":
+      return { icon: "🍻", text: "CREW PICK" };
+    case "luxury-seeker":
+      return { icon: "✨", text: "PREMIUM PICK" };
+    case "budget-maximizer":
+      return { icon: "💰", text: "BEST VALUE" };
+    default:
+      return { icon: "💡", text: "RECOMMENDATION" };
+  }
+}
+
+// Legacy on-pass label
+function getPersonaOnPassLabelLegacy(persona: Persona): string {
   switch (persona) {
     case "powder-hunter":
       return "FRESHEST ON PASS";
@@ -41,7 +69,34 @@ function getPersonaOnPassLabel(persona: Persona): string {
   }
 }
 
-function getPersonaBestSnowLabel(persona: Persona): string {
+// New 9-persona on-pass label
+function getPersonaTypeOnPassLabel(persona: PersonaType): string {
+  switch (persona) {
+    case "core-local":
+      return "FRESHEST ON PASS";
+    case "storm-chaser":
+      return "CHASE WORTHY";
+    case "family-planner":
+      return "FAMILY-FRIENDLY";
+    case "weekend-warrior":
+      return "BEST ROI";
+    case "resort-loyalist":
+      return "YOUR HOME";
+    case "learning-curve":
+      return "BEGINNER-FRIENDLY";
+    case "social-skier":
+      return "BEST SCENE";
+    case "luxury-seeker":
+      return "PREMIUM PICK";
+    case "budget-maximizer":
+      return "BEST DEAL";
+    default:
+      return "ON YOUR PASS";
+  }
+}
+
+// Legacy best snow label
+function getPersonaBestSnowLabelLegacy(persona: Persona): string {
   switch (persona) {
     case "powder-hunter":
       return "DEEPEST SNOW";
@@ -58,11 +113,45 @@ function getPersonaBestSnowLabel(persona: Persona): string {
   }
 }
 
+// New 9-persona best snow label
+function getPersonaTypeBestSnowLabel(persona: PersonaType): string {
+  switch (persona) {
+    case "core-local":
+      return "DEEPEST SNOW";
+    case "storm-chaser":
+      return "STORM TARGET";
+    case "family-planner":
+      return "BEST CONDITIONS";
+    case "weekend-warrior":
+      return "WORTH THE DRIVE";
+    case "resort-loyalist":
+      return "UPCOMING SNOW";
+    case "learning-curve":
+      return "IDEAL CONDITIONS";
+    case "social-skier":
+      return "BEST VIBE";
+    case "luxury-seeker":
+      return "TOP TIER";
+    case "budget-maximizer":
+      return "VALUE PICK";
+    default:
+      return "BEST SNOW";
+  }
+}
+
 export default function Recommendation({ recommendation }: RecommendationProps) {
-  const { persona } = usePersona();
-  const headline = getPersonaHeadline(persona);
-  const onPassLabel = getPersonaOnPassLabel(persona);
-  const bestSnowLabel = getPersonaBestSnowLabel(persona);
+  const { persona, userPersona, effectivePersonaType } = usePersona();
+
+  // Use new persona system if available, otherwise fall back to legacy
+  const headline = userPersona
+    ? getPersonaTypeHeadline(effectivePersonaType)
+    : getPersonaHeadlineLegacy(persona);
+  const onPassLabel = userPersona
+    ? getPersonaTypeOnPassLabel(effectivePersonaType)
+    : getPersonaOnPassLabelLegacy(persona);
+  const bestSnowLabel = userPersona
+    ? getPersonaTypeBestSnowLabel(effectivePersonaType)
+    : getPersonaBestSnowLabelLegacy(persona);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden animate-fade-slide-in transition-colors">
