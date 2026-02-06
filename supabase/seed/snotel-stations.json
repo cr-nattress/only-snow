@@ -1,0 +1,173 @@
+[
+  {
+    "stationId": "842",
+    "name": "Vail Mountain",
+    "lat": 39.62,
+    "lng": -106.38,
+    "elevation": 10300,
+    "state": "CO",
+    "nearestResorts": ["vail", "beaver-creek"]
+  },
+  {
+    "stationId": "485",
+    "name": "Grizzly Peak",
+    "lat": 39.65,
+    "lng": -105.87,
+    "elevation": 11100,
+    "state": "CO",
+    "nearestResorts": ["loveland", "arapahoe-basin", "keystone"]
+  },
+  {
+    "stationId": "531",
+    "name": "Hoosier Pass",
+    "lat": 39.36,
+    "lng": -106.06,
+    "elevation": 11400,
+    "state": "CO",
+    "nearestResorts": ["breckenridge", "copper-mountain"]
+  },
+  {
+    "stationId": "457",
+    "name": "Fremont Pass",
+    "lat": 39.38,
+    "lng": -106.2,
+    "elevation": 11400,
+    "state": "CO",
+    "nearestResorts": ["copper-mountain", "ski-cooper"]
+  },
+  {
+    "stationId": "142",
+    "name": "Berthoud Summit",
+    "lat": 39.8,
+    "lng": -105.78,
+    "elevation": 11300,
+    "state": "CO",
+    "nearestResorts": ["winter-park", "eldora"]
+  },
+  {
+    "stationId": "737",
+    "name": "Steamboat Springs",
+    "lat": 40.46,
+    "lng": -106.73,
+    "elevation": 9200,
+    "state": "CO",
+    "nearestResorts": ["steamboat"]
+  },
+  {
+    "stationId": "542",
+    "name": "Independence Pass",
+    "lat": 39.08,
+    "lng": -106.62,
+    "elevation": 10700,
+    "state": "CO",
+    "nearestResorts": ["aspen-mountain", "aspen-highlands", "snowmass"]
+  },
+  {
+    "stationId": "879",
+    "name": "Wolf Creek Summit",
+    "lat": 37.47,
+    "lng": -106.8,
+    "elevation": 11000,
+    "state": "CO",
+    "nearestResorts": ["wolf-creek"]
+  },
+  {
+    "stationId": "802",
+    "name": "Telluride",
+    "lat": 37.93,
+    "lng": -107.83,
+    "elevation": 10400,
+    "state": "CO",
+    "nearestResorts": ["telluride"]
+  },
+  {
+    "stationId": "766",
+    "name": "Snowbird",
+    "lat": 40.56,
+    "lng": -111.66,
+    "elevation": 9640,
+    "state": "UT",
+    "nearestResorts": ["snowbird", "alta"]
+  },
+  {
+    "stationId": "628",
+    "name": "Mill D North",
+    "lat": 40.66,
+    "lng": -111.6,
+    "elevation": 9240,
+    "state": "UT",
+    "nearestResorts": ["brighton", "solitude"]
+  },
+  {
+    "stationId": "684",
+    "name": "Parleys Summit",
+    "lat": 40.76,
+    "lng": -111.58,
+    "elevation": 7590,
+    "state": "UT",
+    "nearestResorts": ["park-city", "deer-valley"]
+  },
+  {
+    "stationId": "823",
+    "name": "Trial Lake",
+    "lat": 40.68,
+    "lng": -110.95,
+    "elevation": 9900,
+    "state": "UT",
+    "nearestResorts": ["snowbasin", "powder-mountain"]
+  },
+  {
+    "stationId": "811",
+    "name": "Taos Powderhorn",
+    "lat": 36.64,
+    "lng": -105.45,
+    "elevation": 10300,
+    "state": "NM",
+    "nearestResorts": ["taos-ski-valley"]
+  },
+  {
+    "stationId": "708",
+    "name": "Sierra Blanca",
+    "lat": 33.38,
+    "lng": -105.78,
+    "elevation": 10800,
+    "state": "NM",
+    "nearestResorts": ["ski-apache"]
+  },
+  {
+    "stationId": "687",
+    "name": "Phillips Bench",
+    "lat": 43.52,
+    "lng": -110.93,
+    "elevation": 8200,
+    "state": "WY",
+    "nearestResorts": ["jackson-hole", "grand-targhee"]
+  },
+  {
+    "stationId": "590",
+    "name": "Lone Mountain",
+    "lat": 45.26,
+    "lng": -111.48,
+    "elevation": 8800,
+    "state": "MT",
+    "nearestResorts": ["big-sky"]
+  },
+  {
+    "stationId": "448",
+    "name": "Flattop Mountain",
+    "lat": 48.47,
+    "lng": -114.38,
+    "elevation": 6350,
+    "state": "MT",
+    "nearestResorts": ["whitefish-mountain"]
+  },
+  {
+    "stationId": "145",
+    "name": "Bridger Bowl",
+    "lat": 45.82,
+    "lng": -110.9,
+    "elevation": 8100,
+    "state": "MT",
+    "nearestResorts": ["bridger-bowl"]
+  }
+]

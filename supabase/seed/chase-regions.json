@@ -1,0 +1,79 @@
+[
+  {
+    "name": "I-70 Corridor",
+    "slug": "i70-corridor",
+    "bestAirport": "DEN",
+    "lat": 39.6,
+    "lng": -106.0
+  },
+  {
+    "name": "Steamboat Area",
+    "slug": "steamboat-area",
+    "bestAirport": "HDN",
+    "lat": 40.49,
+    "lng": -106.83
+  },
+  {
+    "name": "Aspen Area",
+    "slug": "aspen-area",
+    "bestAirport": "ASE",
+    "lat": 39.19,
+    "lng": -106.82
+  },
+  {
+    "name": "San Juans",
+    "slug": "san-juans",
+    "bestAirport": "MTJ",
+    "lat": 37.94,
+    "lng": -107.81
+  },
+  {
+    "name": "Front Range",
+    "slug": "front-range",
+    "bestAirport": "DEN",
+    "lat": 39.88,
+    "lng": -105.76
+  },
+  {
+    "name": "Salt Lake Cottonwoods",
+    "slug": "salt-lake-cottonwoods",
+    "bestAirport": "SLC",
+    "lat": 40.58,
+    "lng": -111.64
+  },
+  {
+    "name": "Park City Area",
+    "slug": "park-city-area",
+    "bestAirport": "SLC",
+    "lat": 40.65,
+    "lng": -111.51
+  },
+  {
+    "name": "Ogden Area",
+    "slug": "ogden-area",
+    "bestAirport": "SLC",
+    "lat": 41.21,
+    "lng": -111.86
+  },
+  {
+    "name": "Taos & Northern NM",
+    "slug": "taos-area",
+    "bestAirport": "ABQ",
+    "lat": 36.6,
+    "lng": -105.45
+  },
+  {
+    "name": "Jackson Hole Area",
+    "slug": "jackson-hole-area",
+    "bestAirport": "JAC",
+    "lat": 43.59,
+    "lng": -110.85
+  },
+  {
+    "name": "Big Sky & SW Montana",
+    "slug": "big-sky-area",
+    "bestAirport": "BZN",
+    "lat": 45.28,
+    "lng": -111.4
+  }
+]
