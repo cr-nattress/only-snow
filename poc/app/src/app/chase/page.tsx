@@ -6,10 +6,10 @@ import { chaseRegions, tellurideTripPlan } from "@/data/scenarios";
 import { StormSeverity } from "@/data/types";
 
 const severityConfig: Record<StormSeverity, { bg: string; border: string; text: string; label: string; icon: string }> = {
-  quiet: { bg: "bg-gray-50", border: "border-gray-200", text: "text-gray-500", label: "QUIET", icon: "" },
-  moderate: { bg: "bg-yellow-50", border: "border-yellow-200", text: "text-yellow-800", label: "MODERATE", icon: "🟡" },
-  significant: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-800", label: "SIGNIFICANT", icon: "🟠" },
-  chase: { bg: "bg-red-50", border: "border-red-300", text: "text-red-800", label: "MAJOR EVENT", icon: "🔴" },
+  quiet: { bg: "bg-gray-50 dark:bg-slate-700", border: "border-gray-200 dark:border-slate-600", text: "text-gray-500 dark:text-slate-400", label: "QUIET", icon: "" },
+  moderate: { bg: "bg-yellow-50 dark:bg-yellow-900/30", border: "border-yellow-200 dark:border-yellow-700", text: "text-yellow-800 dark:text-yellow-300", label: "MODERATE", icon: "🟡" },
+  significant: { bg: "bg-orange-50 dark:bg-orange-900/30", border: "border-orange-200 dark:border-orange-700", text: "text-orange-800 dark:text-orange-300", label: "SIGNIFICANT", icon: "🟠" },
+  chase: { bg: "bg-red-50 dark:bg-red-900/30", border: "border-red-300 dark:border-red-700", text: "text-red-800 dark:text-red-300", label: "MAJOR EVENT", icon: "🔴" },
 };
 
 type View = "national" | "region" | "trip";
@@ -21,12 +21,12 @@ export default function ChasePage() {
   const region = chaseRegions.find((r) => r.id === selectedRegion);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 md:px-6 lg:px-8 py-3">
+      <div className="px-4 md:px-6 lg:px-8 py-3">
         <div className="flex items-center gap-3">
           {view === "national" ? (
-            <Link href="/dashboard" className="text-gray-400 hover:text-gray-600">
+            <Link href="/dashboard" className="text-white/70 hover:text-white">
               ←
             </Link>
           ) : (
@@ -35,18 +35,18 @@ export default function ChasePage() {
                 if (view === "trip") setView("region");
                 else setView("national");
               }}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-white/70 hover:text-white"
             >
               ←
             </button>
           )}
           <div>
-            <h1 className="text-lg lg:text-xl font-bold text-gray-900">
+            <h1 className="text-lg lg:text-xl font-bold text-white">
               {view === "national" && "Storm Tracker"}
               {view === "region" && region?.name}
               {view === "trip" && "Chase Trip Plan"}
             </h1>
-            <p className="text-xs lg:text-sm text-gray-500">
+            <p className="text-xs lg:text-sm text-blue-100 dark:text-slate-400">
               {view === "national" && "National Overview · Next 10 Days"}
               {view === "region" && region?.dates}
               {view === "trip" && tellurideTripPlan.dates}
@@ -58,11 +58,11 @@ export default function ChasePage() {
       {/* National View */}
       {view === "national" && (
         <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4 space-y-3 lg:space-y-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 md:px-5 lg:px-6 py-3">
-            <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 mb-1">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 dark:border-slate-700 px-4 md:px-5 lg:px-6 py-3">
+            <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-slate-400 dark:text-slate-400 mb-1">
               NEXT 10 DAYS — WHERE&apos;S THE SNOW?
             </h3>
-            <p className="text-[10px] lg:text-xs text-gray-400">Tap a region for resort-level detail</p>
+            <p className="text-[10px] lg:text-xs text-gray-400 dark:text-slate-500">Tap a region for resort-level detail</p>
           </div>
 
           {/* Region cards — 2-col on tablet, 3-col on desktop */}
@@ -86,15 +86,15 @@ export default function ChasePage() {
                           {config.label}
                         </span>
                       </div>
-                      <div className="text-sm lg:text-base font-semibold text-gray-900">{r.name}</div>
-                      <div className="text-xs lg:text-sm text-gray-600 mt-0.5">{r.description}</div>
+                      <div className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">{r.name}</div>
+                      <div className="text-xs lg:text-sm text-gray-600 dark:text-slate-300 mt-0.5">{r.description}</div>
                     </div>
                     <div className="text-right shrink-0 ml-4">
                       <div className={`text-sm lg:text-base font-bold ${r.severity !== "quiet" ? "text-blue-600" : "text-gray-400"}`}>
                         {r.forecastTotal}
                       </div>
                       {r.dates && (
-                        <div className="text-[10px] lg:text-xs text-gray-500">{r.dates}</div>
+                        <div className="text-[10px] lg:text-xs text-gray-500 dark:text-slate-400">{r.dates}</div>
                       )}
                     </div>
                   </div>
@@ -104,17 +104,17 @@ export default function ChasePage() {
           </div>
 
           {/* Chase alert callout */}
-          <div className="bg-red-50 rounded-xl border border-red-200 px-4 md:px-5 lg:px-6 py-3 lg:py-4">
+          <div className="bg-red-50 dark:bg-red-900/30 rounded-xl border border-red-200 dark:border-red-700 px-4 md:px-5 lg:px-6 py-3 lg:py-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm">🔴</span>
-              <span className="text-xs lg:text-sm font-bold text-red-800">CHASE ALERT</span>
+              <span className="text-xs lg:text-sm font-bold text-red-800 dark:text-red-300">CHASE ALERT</span>
             </div>
-            <p className="text-xs lg:text-sm text-red-700">
+            <p className="text-xs lg:text-sm text-red-700 dark:text-red-200">
               Southern Colorado, Feb 10-13. This is chase-worthy from the East Coast.
             </p>
             <button
               onClick={() => setView("trip")}
-              className="mt-2 text-xs lg:text-sm font-semibold text-red-700 hover:text-red-900"
+              className="mt-2 text-xs lg:text-sm font-semibold text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-red-100"
             >
               See flight + logistics breakdown →
             </button>
@@ -133,17 +133,17 @@ export default function ChasePage() {
                 {region.dates} STORM
               </span>
             </div>
-            <p className="text-xs lg:text-sm text-gray-700">{region.description}</p>
+            <p className="text-xs lg:text-sm text-gray-700 dark:text-slate-300">{region.description}</p>
           </div>
 
           {/* Resort ranking */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-4 md:px-5 lg:px-6 py-2.5 border-b border-gray-100">
-              <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+            <div className="px-4 md:px-5 lg:px-6 py-2.5 border-b border-gray-100 dark:border-slate-700">
+              <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-slate-400">
                 FORECAST TOTALS ({region.dates})
               </h3>
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-50 dark:divide-slate-700">
               {[
                 { name: "Silverton", total: "24-30\"", note: "Expert only, heli/cat", pass: "independent" },
                 { name: "Wolf Creek", total: "22-28\"", note: "No lodging at base", pass: "independent" },
@@ -158,7 +158,7 @@ export default function ChasePage() {
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm lg:text-base font-semibold">{r.name}</span>
+                      <span className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">{r.name}</span>
                       {r.pass === "ikon" && (
                         <span className="text-[10px] lg:text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
                           IKON
@@ -170,7 +170,7 @@ export default function ChasePage() {
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] lg:text-xs text-gray-500">{r.note}</div>
+                    <div className="text-[10px] lg:text-xs text-gray-500 dark:text-slate-400">{r.note}</div>
                   </div>
                   <span className="text-sm lg:text-base font-bold text-blue-600 tabular-nums">{r.total}</span>
                 </div>
@@ -179,14 +179,14 @@ export default function ChasePage() {
           </div>
 
           {/* Pass recommendations */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 md:px-5 lg:px-6 py-3 lg:py-4 space-y-3">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 px-4 md:px-5 lg:px-6 py-3 lg:py-4 space-y-3">
             <div>
               <div className="flex items-center gap-1.5 mb-0.5">
                 <span className="text-[10px] lg:text-xs font-bold text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded">
                   FOR IKON
                 </span>
               </div>
-              <p className="text-xs lg:text-sm text-gray-700">
+              <p className="text-xs lg:text-sm text-gray-700 dark:text-slate-300">
                 Best option: <strong>Telluride (18-24&quot;)</strong>. Great town for 2-3 nights.
               </p>
             </div>
@@ -196,7 +196,7 @@ export default function ChasePage() {
                   FOR EPIC
                 </span>
               </div>
-              <p className="text-xs lg:text-sm text-gray-700">
+              <p className="text-xs lg:text-sm text-gray-700 dark:text-slate-300">
                 Best option: <strong>Crested Butte (15-20&quot;)</strong>. Not as much as Telluride, but on Epic.
               </p>
             </div>
@@ -216,14 +216,14 @@ export default function ChasePage() {
       {view === "trip" && (
         <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4 space-y-3 lg:space-y-4">
           {/* Trip header */}
-          <div className="bg-red-50 rounded-xl border border-red-200 px-4 md:px-5 lg:px-6 py-3 lg:py-4">
+          <div className="bg-red-50 dark:bg-red-900/30 rounded-xl border border-red-200 dark:border-red-700 px-4 md:px-5 lg:px-6 py-3 lg:py-4">
             <div className="flex items-center gap-2 mb-1">
               <span>✈️</span>
-              <span className="text-sm lg:text-base font-bold text-gray-900">
+              <span className="text-sm lg:text-base font-bold text-gray-900 dark:text-white">
                 CHASE TRIP: {tellurideTripPlan.destination}
               </span>
             </div>
-            <p className="text-xs lg:text-sm text-gray-600">
+            <p className="text-xs lg:text-sm text-gray-600 dark:text-red-200">
               {tellurideTripPlan.dates} · {tellurideTripPlan.nights} nights · Ikon ✓
             </p>
           </div>
@@ -233,20 +233,20 @@ export default function ChasePage() {
             {/* Left column: flights, lodging, rental car */}
             <div className="space-y-3 lg:space-y-4">
               {/* Flights */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-4 md:px-5 lg:px-6 py-2.5 border-b border-gray-100">
-                  <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500">FLIGHTS</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div className="px-4 md:px-5 lg:px-6 py-2.5 border-b border-gray-100 dark:border-slate-700">
+                  <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-slate-400">FLIGHTS</h3>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-gray-50 dark:divide-slate-700">
                   {tellurideTripPlan.flights.map((f, i) => (
                     <div key={f.route} className="px-4 md:px-5 lg:px-6 py-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm lg:text-base font-semibold">{f.route}</span>
-                        <span className={`text-sm lg:text-base font-bold ${i === 0 ? "text-green-600" : "text-gray-500"}`}>
+                        <span className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">{f.route}</span>
+                        <span className={`text-sm lg:text-base font-bold ${i === 0 ? "text-green-600" : "text-gray-500 dark:text-slate-400"}`}>
                           ${f.price} RT
                         </span>
                       </div>
-                      <p className="text-xs lg:text-sm text-gray-500">{f.details}</p>
+                      <p className="text-xs lg:text-sm text-gray-500 dark:text-slate-400">{f.details}</p>
                       {i === 0 && (
                         <div className="mt-2 flex items-center gap-1">
                           <span className="text-[10px] lg:text-xs font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
@@ -260,31 +260,31 @@ export default function ChasePage() {
               </div>
 
               {/* Lodging */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-4 md:px-5 lg:px-6 py-2.5 border-b border-gray-100">
-                  <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500">LODGING</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div className="px-4 md:px-5 lg:px-6 py-2.5 border-b border-gray-100 dark:border-slate-700">
+                  <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-slate-400">LODGING</h3>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-gray-50 dark:divide-slate-700">
                   {tellurideTripPlan.lodging.map((l) => (
                     <div key={l.name} className="px-4 md:px-5 lg:px-6 py-2.5 flex items-center justify-between">
                       <div>
-                        <div className="text-sm lg:text-base font-medium">{l.name}</div>
-                        <div className="text-[10px] lg:text-xs text-gray-500">{l.note}</div>
+                        <div className="text-sm lg:text-base font-medium text-gray-900 dark:text-white">{l.name}</div>
+                        <div className="text-[10px] lg:text-xs text-gray-500 dark:text-slate-400">{l.note}</div>
                       </div>
-                      <span className="text-sm lg:text-base font-semibold text-gray-700">${l.price}/night</span>
+                      <span className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">${l.price}/night</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Rental Car */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 md:px-5 lg:px-6 py-3">
-                <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 mb-1">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 px-4 md:px-5 lg:px-6 py-3">
+                <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-slate-400 mb-1">
                   RENTAL CAR
                 </h3>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs lg:text-sm text-gray-600">{tellurideTripPlan.rentalCar.note}</span>
-                  <span className="text-sm lg:text-base font-semibold">${tellurideTripPlan.rentalCar.price}/day</span>
+                  <span className="text-xs lg:text-sm text-gray-600 dark:text-slate-300">{tellurideTripPlan.rentalCar.note}</span>
+                  <span className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">${tellurideTripPlan.rentalCar.price}/day</span>
                 </div>
               </div>
             </div>
@@ -292,59 +292,59 @@ export default function ChasePage() {
             {/* Right column: ski plan + cost estimate */}
             <div className="space-y-3 lg:space-y-4">
               {/* Ski Plan */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-4 md:px-5 lg:px-6 py-2.5 border-b border-gray-100">
-                  <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500">SKI PLAN</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div className="px-4 md:px-5 lg:px-6 py-2.5 border-b border-gray-100 dark:border-slate-700">
+                  <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-slate-400">SKI PLAN</h3>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-gray-50 dark:divide-slate-700">
                   {tellurideTripPlan.skiPlan.map((d, i) => (
                     <div key={d.day} className="px-4 md:px-5 lg:px-6 py-2.5">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs lg:text-sm font-semibold text-gray-900">{d.day}</span>
+                        <span className="text-xs lg:text-sm font-semibold text-gray-900 dark:text-white">{d.day}</span>
                         {i === 1 && (
                           <span className="text-[10px] lg:text-xs font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">
                             POWDER DAY
                           </span>
                         )}
                       </div>
-                      <p className="text-xs lg:text-sm text-gray-600">{d.plan}</p>
+                      <p className="text-xs lg:text-sm text-gray-600 dark:text-slate-300">{d.plan}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Cost Estimate */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 md:px-5 lg:px-6 py-3 lg:py-4">
-                <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 mb-3">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 px-4 md:px-5 lg:px-6 py-3 lg:py-4">
+                <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-slate-400 mb-3">
                   ESTIMATED TOTAL
                 </h3>
                 <div className="space-y-1.5 text-xs lg:text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Flights</span>
-                    <span className="tabular-nums">${tellurideTripPlan.flights[0].price}</span>
+                    <span className="text-gray-600 dark:text-slate-300">Flights</span>
+                    <span className="tabular-nums text-gray-900 dark:text-white">${tellurideTripPlan.flights[0].price}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Lodging ({tellurideTripPlan.nights}n)</span>
-                    <span className="tabular-nums">${tellurideTripPlan.lodging[0].price * tellurideTripPlan.nights}</span>
+                    <span className="text-gray-600 dark:text-slate-300">Lodging ({tellurideTripPlan.nights}n)</span>
+                    <span className="tabular-nums text-gray-900 dark:text-white">${tellurideTripPlan.lodging[0].price * tellurideTripPlan.nights}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Rental car</span>
-                    <span className="tabular-nums">${tellurideTripPlan.rentalCar.price * (tellurideTripPlan.nights + 1)}</span>
+                    <span className="text-gray-600 dark:text-slate-300">Rental car</span>
+                    <span className="tabular-nums text-gray-900 dark:text-white">${tellurideTripPlan.rentalCar.price * (tellurideTripPlan.nights + 1)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Lift tickets</span>
+                    <span className="text-gray-600 dark:text-slate-300">Lift tickets</span>
                     <span className="tabular-nums text-green-600">$0 (Ikon pass)</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Food/misc</span>
-                    <span className="tabular-nums">~$200</span>
+                    <span className="text-gray-600 dark:text-slate-300">Food/misc</span>
+                    <span className="tabular-nums text-gray-900 dark:text-white">~$200</span>
                   </div>
-                  <div className="border-t border-gray-200 pt-1.5 mt-1.5">
-                    <div className="flex justify-between font-bold">
+                  <div className="border-t border-gray-200 dark:border-slate-600 pt-1.5 mt-1.5">
+                    <div className="flex justify-between font-bold text-gray-900 dark:text-white">
                       <span>Total</span>
                       <span className="tabular-nums">~${tellurideTripPlan.totalWithPass.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-gray-500 mt-0.5">
+                    <div className="flex justify-between text-gray-500 dark:text-slate-400 mt-0.5">
                       <span>Cost per powder day</span>
                       <span className="tabular-nums">~${tellurideTripPlan.costPerPowderDay}</span>
                     </div>
@@ -355,13 +355,13 @@ export default function ChasePage() {
           </div>
 
           {/* Bottom line — full width */}
-          <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 md:px-5 lg:px-6 py-3 lg:py-4">
-            <h3 className="text-xs lg:text-sm font-bold text-amber-800 mb-1">💡 BOTTOM LINE</h3>
-            <p className="text-xs lg:text-sm text-amber-700 leading-relaxed">
+          <div className="bg-amber-50 dark:bg-amber-900/30 rounded-xl border border-amber-200 dark:border-amber-700 px-4 md:px-5 lg:px-6 py-3 lg:py-4">
+            <h3 className="text-xs lg:text-sm font-bold text-amber-800 dark:text-amber-300 mb-1">💡 BOTTOM LINE</h3>
+            <p className="text-xs lg:text-sm text-amber-700 dark:text-amber-200 leading-relaxed">
               18-24&quot; at Telluride is a 2-3x per season event. Total trip cost is ~$1,200.
               You get 2 genuine powder days and 1 packed-powder day.
             </p>
-            <p className="text-xs lg:text-sm text-amber-700 mt-2 font-semibold">
+            <p className="text-xs lg:text-sm text-amber-700 dark:text-amber-200 mt-2 font-semibold">
               DECISION DEADLINE: Book flights by Saturday. Prices will jump once the forecast firms up Sunday.
             </p>
           </div>
@@ -370,7 +370,7 @@ export default function ChasePage() {
 
       {/* Footer */}
       <div className="px-4 md:px-6 lg:px-8 py-6 text-center">
-        <p className="text-[10px] lg:text-xs text-gray-400">POC — Storm Chase Mode</p>
+        <p className="text-[10px] lg:text-xs text-blue-200 dark:text-slate-500">POC — Storm Chase Mode</p>
       </div>
     </div>
   );
