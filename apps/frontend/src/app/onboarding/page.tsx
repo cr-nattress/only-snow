@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePersona } from "@/context/PersonaContext";
-import { personasV2, getPersonaInfoV2 } from "@/data/personas";
+import { usePreferences } from "@/context/PreferencesContext";
+import { personasV2, getPersonaInfoV2, newToLegacyPersona } from "@/data/personas";
 import {
   PersonaType,
   SkiFrequency,
@@ -93,6 +94,7 @@ const mockDetectedResorts = [
 export default function OnboardingPage() {
   const router = useRouter();
   const { setUserPersona } = usePersona();
+  const { updatePreferences } = usePreferences();
   const [step, setStep] = useState<Step>("location");
 
   // Basic onboarding state
@@ -193,6 +195,18 @@ export default function OnboardingPage() {
         setStep("confirm");
         break;
       case "confirm":
+        // Persist all onboarding data before navigating
+        updatePreferences({
+          location,
+          passType: pass,
+          driveRadius: radius,
+          chaseWillingness: chase || "no",
+          persona: detectedPersona
+            ? newToLegacyPersona(detectedPersona.primary)
+            : "powder-hunter",
+          userPersona: detectedPersona,
+          onboardingComplete: true,
+        });
         router.push("/dashboard");
         break;
     }

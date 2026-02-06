@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { usePersona } from "@/context/PersonaContext";
-import { getPersonaInfo, personasV2, getPersonaInfoV2 } from "@/data/personas";
+import { usePreferences } from "@/context/PreferencesContext";
+import { getPersonaInfo, personasV2, getPersonaInfoV2, newToLegacyPersona } from "@/data/personas";
 
 const passes = [
   { id: "epic", label: "Epic", color: "bg-indigo-600" },
@@ -33,6 +34,7 @@ const notificationTypes = [
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
+  const { preferences, loaded, updatePreferences } = usePreferences();
   const [location, setLocation] = useState("Denver, CO");
   const [driveRadius, setDriveRadius] = useState(120);
   const [pass, setPass] = useState("epic");
@@ -47,12 +49,31 @@ export default function SettingsPage() {
     "worth-knowing": true,
     "price-drop": true,
   });
+  const [saved, setSaved] = useState(false);
 
   const [editingLocation, setEditingLocation] = useState(false);
   const [editingPass, setEditingPass] = useState(false);
   const [editingPersona, setEditingPersona] = useState(false);
 
   const { persona, userPersona, setUserPersona, effectivePersonaType } = usePersona();
+
+  // Hydrate local state from stored preferences on load
+  useEffect(() => {
+    if (!loaded) return;
+    if (preferences.location) setLocation(preferences.location);
+    if (preferences.driveRadius) setDriveRadius(preferences.driveRadius);
+    if (preferences.passType) setPass(preferences.passType);
+    if (preferences.chaseWillingness) {
+      setChaseWillingness(preferences.chaseWillingness);
+      setChaseEnabled(preferences.chaseWillingness !== "no");
+    }
+  }, [loaded, preferences]);
+
+  // Flash a brief "Saved" indicator
+  function flashSaved() {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  }
   const currentPersona = userPersona
     ? getPersonaInfoV2(userPersona.primary)
     : getPersonaInfo(persona);
@@ -97,6 +118,15 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Save indicator */}
+      {saved && (
+        <div className="px-4 md:px-6 lg:px-8">
+          <div className="text-xs text-center text-green-600 dark:text-green-400 py-1">
+            Settings saved
+          </div>
+        </div>
+      )}
 
       <div className="px-4 md:px-6 lg:px-8 py-4 lg:py-6 space-y-4 lg:space-y-6">
         {/* Account Section */}
@@ -171,8 +201,8 @@ export default function SettingsPage() {
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    onBlur={() => setEditingLocation(false)}
-                    onKeyDown={(e) => e.key === "Enter" && setEditingLocation(false)}
+                    onBlur={() => { setEditingLocation(false); updatePreferences({ location }); flashSaved(); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { setEditingLocation(false); updatePreferences({ location }); flashSaved(); } }}
                     className="mt-1 text-xs lg:text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded px-2 py-1 w-40"
                     autoFocus
                   />
@@ -200,7 +230,7 @@ export default function SettingsPage() {
               </div>
               <select
                 value={driveRadius}
-                onChange={(e) => setDriveRadius(Number(e.target.value))}
+                onChange={(e) => { const v = Number(e.target.value); setDriveRadius(v); updatePreferences({ driveRadius: v }); flashSaved(); }}
                 className="text-xs lg:text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded px-2 py-1"
               >
                 <option value={60}>1 hour</option>
@@ -223,6 +253,8 @@ export default function SettingsPage() {
                         onClick={() => {
                           setPass(p.id);
                           setEditingPass(false);
+                          updatePreferences({ passType: p.id });
+                          flashSaved();
                         }}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
                           pass === p.id
@@ -274,25 +306,25 @@ export default function SettingsPage() {
                         key={p.id}
                         onClick={() => {
                           // Update userPersona if it exists, otherwise create a minimal one
-                          if (userPersona) {
-                            setUserPersona({
-                              ...userPersona,
-                              primary: p.id,
-                              confidence: 1.0,
-                            });
-                          } else {
-                            setUserPersona({
-                              primary: p.id,
-                              confidence: 1.0,
-                              signals: {
-                                frequency: "regular",
-                                groupType: "solo",
-                                decisionTriggers: ["snow"],
-                                experienceLevel: "intermediate",
-                              },
-                            });
-                          }
+                          const updated = userPersona
+                            ? { ...userPersona, primary: p.id, confidence: 1.0 }
+                            : {
+                                primary: p.id,
+                                confidence: 1.0,
+                                signals: {
+                                  frequency: "regular" as const,
+                                  groupType: "solo" as const,
+                                  decisionTriggers: ["snow" as const],
+                                  experienceLevel: "intermediate" as const,
+                                },
+                              };
+                          setUserPersona(updated);
+                          updatePreferences({
+                            persona: newToLegacyPersona(p.id),
+                            userPersona: updated,
+                          });
                           setEditingPersona(false);
+                          flashSaved();
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
                           effectivePersonaType === p.id
@@ -404,7 +436,7 @@ export default function SettingsPage() {
                   ].map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => setChaseWillingness(opt.value)}
+                      onClick={() => { setChaseWillingness(opt.value); updatePreferences({ chaseWillingness: opt.value }); flashSaved(); }}
                       className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
                         chaseWillingness === opt.value
                           ? "border-blue-500 bg-blue-50"
