@@ -155,7 +155,7 @@ function mapApiDetail(api: ApiResortDetail): ResortDetailData {
 // ── Public API ───────────────────────────────────────────────────────
 
 export async function fetchResortDetail(
-  resortId: number,
+  resortId: number | string,
 ): Promise<ResortDetailData | null> {
   try {
     const client = getClient();

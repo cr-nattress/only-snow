@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import { createDb } from '@onlysnow/db';
 import { resorts, resortConditions } from '@onlysnow/db';
 import { logger, batchProcess } from '@onlysnow/pipeline-core';
-import { createRedisClient, CacheKeys, cache } from '@onlysnow/redis';
+import { tryCreateRedisClient, CacheKeys, cache } from '@onlysnow/redis';
 
 const log = logger;
 
@@ -85,7 +85,7 @@ http('conditionsRefresh', async (req, res) => {
   }
 
   const db = createDb(dbUrl);
-  const redis = createRedisClient();
+  const redis = tryCreateRedisClient();
 
   const allResorts = await db.select().from(resorts);
   log.info(`Processing ${allResorts.length} resorts`);

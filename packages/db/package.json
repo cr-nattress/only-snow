@@ -18,10 +18,10 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
+    "db:generate": "tsc && drizzle-kit generate",
+    "db:migrate": "tsc && drizzle-kit migrate",
+    "db:push": "tsc && drizzle-kit push",
+    "db:studio": "tsc && drizzle-kit studio",
     "db:seed": "tsx src/seed.ts"
   },
   "dependencies": {

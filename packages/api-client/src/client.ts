@@ -36,11 +36,11 @@ export class OnlySnowApiClient {
     return this.request<ResortSummary[]>('/api/resorts');
   }
 
-  async getResort(id: number): Promise<ResortDetail> {
+  async getResort(id: number | string): Promise<ResortDetail> {
     return this.request<ResortDetail>(`/api/resorts/${id}`);
   }
 
-  async getResortForecast(id: number): Promise<ForecastResponse> {
+  async getResortForecast(id: number | string): Promise<ForecastResponse> {
     return this.request<ForecastResponse>(`/api/resorts/${id}/forecast`);
   }
 

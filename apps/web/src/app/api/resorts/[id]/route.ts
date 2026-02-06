@@ -20,12 +20,27 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const resortId = parseInt(id, 10);
-  if (isNaN(resortId)) {
-    return NextResponse.json({ error: 'Invalid resort ID' }, { status: 400 });
+  const numericId = parseInt(id, 10);
+  const isSlug = isNaN(numericId);
+
+  const db = getDb();
+  const redis = getRedis();
+
+  // Resolve resort by numeric ID or slug
+  const [resortRow] = await db
+    .select({
+      resort: resorts,
+      conditions: resortConditions,
+    })
+    .from(resorts)
+    .leftJoin(resortConditions, eq(resorts.id, resortConditions.resortId))
+    .where(isSlug ? eq(resorts.slug, id) : eq(resorts.id, numericId));
+
+  if (!resortRow) {
+    return NextResponse.json({ error: 'Resort not found' }, { status: 404 });
   }
 
-  const redis = getRedis();
+  const resortId = resortRow.resort.id;
   const cacheKey = CacheKeys.resortDetail(resortId);
 
   const result = await cache.getOrSet<ResortDetail>(
@@ -33,24 +48,7 @@ export async function GET(
     cacheKey,
     CacheTTL.RESORT_DETAIL,
     async () => {
-      const db = getDb();
-
-      // Fetch resort + conditions
-      const [resortRow] = await db
-        .select({
-          resort: resorts,
-          conditions: resortConditions,
-        })
-        .from(resorts)
-        .leftJoin(resortConditions, eq(resorts.id, resortConditions.resortId))
-        .where(eq(resorts.id, resortId));
-
-      if (!resortRow) {
-        throw new Error('NOT_FOUND');
-      }
-
       // Fetch 10-day forecast
-      const today = new Date().toISOString().split('T')[0];
       const forecastRows = await db
         .select()
         .from(forecasts)
@@ -100,12 +98,12 @@ export async function GET(
         }
       }
 
-      // Fetch avalanche info (would need resort-to-zone mapping, simplified for now)
+      // Fetch avalanche info (simplified — real impl would match by resort's region/location)
       let avalanche = null;
       const [zone] = await db
         .select()
         .from(avalancheZones)
-        .limit(1); // Simplified — real impl would match by resort's region/location
+        .limit(1);
 
       if (zone) {
         avalanche = {

@@ -2,7 +2,7 @@ import { http } from '@google-cloud/functions-framework';
 import { createDb } from '@onlysnow/db';
 import { snotelStations, snotelReadings } from '@onlysnow/db';
 import { logger, batchProcess } from '@onlysnow/pipeline-core';
-import { createRedisClient, CacheKeys, cache } from '@onlysnow/redis';
+import { tryCreateRedisClient, CacheKeys, cache } from '@onlysnow/redis';
 
 const log = logger;
 
@@ -68,7 +68,7 @@ http('snotelDaily', async (req, res) => {
   }
 
   const db = createDb(dbUrl);
-  const redis = createRedisClient();
+  const redis = tryCreateRedisClient();
 
   const stations = await db.select().from(snotelStations);
   log.info(`Processing ${stations.length} SNOTEL stations`);

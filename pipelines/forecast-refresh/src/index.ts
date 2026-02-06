@@ -2,7 +2,7 @@ import { http } from '@google-cloud/functions-framework';
 import { createDb } from '@onlysnow/db';
 import { resorts, forecasts, forecastHourly } from '@onlysnow/db/schema';
 import { logger, batchProcess, delay } from '@onlysnow/pipeline-core';
-import { createRedisClient, CacheKeys } from '@onlysnow/redis';
+import { tryCreateRedisClient, CacheKeys, cache } from '@onlysnow/redis';
 import { fetchOpenMeteoForecast } from './open-meteo.js';
 import { transformForecast } from './transform.js';
 import { validateForecastData } from './validate.js';
@@ -13,7 +13,7 @@ http('forecastRefresh', async (req, res) => {
   logger.info('Starting forecast refresh pipeline');
 
   const db = createDb(process.env.DATABASE_URL!);
-  const redis = createRedisClient();
+  const redis = tryCreateRedisClient();
 
   try {
     // 1. Fetch all resorts
@@ -32,11 +32,11 @@ http('forecastRefresh', async (req, res) => {
           resortId: resort.id,
         });
 
-        // Fetch from Open-Meteo
+        // Fetch from Open-Meteo (elevation must be in meters)
         const rawForecast = await fetchOpenMeteoForecast({
           lat: resort.lat,
           lng: resort.lng,
-          elevation: resort.elevationSummit,
+          elevation: Math.round(resort.elevationSummit * 0.3048),
         });
 
         // Transform to our schema
@@ -99,9 +99,9 @@ http('forecastRefresh', async (req, res) => {
         }
 
         // Invalidate cache for this resort
-        await redis.del(CacheKeys.forecast(resort.id));
-        await redis.del(CacheKeys.forecastHourly(resort.id));
-        await redis.del(CacheKeys.resortDetail(resort.id));
+        await cache.invalidate(redis, CacheKeys.forecast(resort.id));
+        await cache.invalidate(redis, CacheKeys.forecastHourly(resort.id));
+        await cache.invalidate(redis, CacheKeys.resortDetail(resort.id));
 
         return { resortId: resort.id, dailyCount: validDaily.length, hourlyCount: hourly.length };
       },
@@ -119,7 +119,7 @@ http('forecastRefresh', async (req, res) => {
     );
 
     // Invalidate regional caches
-    await redis.del(CacheKeys.chaseAlerts());
+    await cache.invalidate(redis, CacheKeys.chaseAlerts());
 
     const durationMs = Date.now() - startTime;
     logger.info('Forecast refresh pipeline completed', {

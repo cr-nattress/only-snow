@@ -1,6 +1,6 @@
 import { http } from '@google-cloud/functions-framework';
 import { logger } from '@onlysnow/pipeline-core';
-import { createRedisClient, CacheKeys, CacheTTL, cache } from '@onlysnow/redis';
+import { tryCreateRedisClient, CacheKeys, CacheTTL, cache } from '@onlysnow/redis';
 
 const log = logger;
 
@@ -90,7 +90,7 @@ http('roadConditions', async (req, res) => {
   const startTime = Date.now();
   log.info('Starting road conditions refresh');
 
-  const redis = createRedisClient();
+  const redis = tryCreateRedisClient();
 
   const conditions = await fetchCDOTConditions();
 

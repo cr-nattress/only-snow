@@ -13,12 +13,23 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const resortId = parseInt(id, 10);
-  if (isNaN(resortId)) {
-    return NextResponse.json({ error: 'Invalid resort ID' }, { status: 400 });
+  const numericId = parseInt(id, 10);
+  const isSlug = isNaN(numericId);
+
+  const db = getDb();
+  const redis = getRedis();
+
+  // Resolve resort by numeric ID or slug
+  const [resort] = await db
+    .select({ id: resorts.id })
+    .from(resorts)
+    .where(isSlug ? eq(resorts.slug, id) : eq(resorts.id, numericId));
+
+  if (!resort) {
+    return NextResponse.json({ error: 'Resort not found' }, { status: 404 });
   }
 
-  const redis = getRedis();
+  const resortId = resort.id;
   const cacheKey = CacheKeys.forecast(resortId);
 
   const result = await cache.getOrSet<ForecastResponse>(
@@ -26,17 +37,6 @@ export async function GET(
     cacheKey,
     CacheTTL.FORECAST,
     async () => {
-      const db = getDb();
-
-      // Verify resort exists
-      const [resort] = await db
-        .select({ id: resorts.id })
-        .from(resorts)
-        .where(eq(resorts.id, resortId));
-
-      if (!resort) {
-        throw new Error('NOT_FOUND');
-      }
 
       // Fetch daily forecasts
       const dailyRows = await db
