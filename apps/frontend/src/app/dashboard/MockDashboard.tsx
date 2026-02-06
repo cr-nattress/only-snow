@@ -8,25 +8,23 @@ import { TimeWindow } from "@/data/types";
 import ResortTable from "@/components/ResortTable";
 import AiAnalysis from "@/components/ExpertTake";
 import PromptInput from "@/components/ScenarioSwitcher";
+import TimeToggle from "@/components/TimeToggle";
 import { usePreferences } from "@/context/PreferencesContext";
 import type { MapResort } from "@/components/ResortMap";
 
 const ResortMap = dynamic(() => import("@/components/ResortMap"), { ssr: false });
 
-// Always show 10-day forecast
-const timeWindow: TimeWindow = "10day";
-
 export default function MockDashboard() {
   const router = useRouter();
   const { loaded, hasPreferences } = usePreferences();
+  const [activeScenarioId, setActiveScenarioId] = useState(scenarios[0].id);
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>("5day");
 
   useEffect(() => {
     if (loaded && !hasPreferences) {
       router.replace("/onboarding");
     }
   }, [loaded, hasPreferences, router]);
-
-  const [activeScenarioId, setActiveScenarioId] = useState(scenarios[0].id);
 
   const scenario = scenarios.find((s) => s.id === activeScenarioId) || scenarios[0];
 
@@ -36,7 +34,7 @@ export default function MockDashboard() {
   const dailyLabels = windowData.dailyLabels;
   const worthKnowing = windowData.worthKnowing ?? scenario.worthKnowing;
 
-  // Build map data using the 10-day window
+  // Build map data using the selected time window
   const mapResorts = useMemo(() => {
     const seen = new Set<string>();
     const items: MapResort[] = [];
@@ -69,7 +67,7 @@ export default function MockDashboard() {
       });
     }
     return items;
-  }, [scenario.yourResorts, worthKnowing]);
+  }, [scenario.yourResorts, worthKnowing, timeWindow]);
 
   return (
     <div className="min-h-screen">
@@ -79,6 +77,12 @@ export default function MockDashboard() {
         activeId={activeScenarioId}
         onChange={setActiveScenarioId}
       />
+
+      {/* Time Window Toggle */}
+      <div className="px-4 md:px-6 lg:px-8 py-2 flex items-center justify-between">
+        <span className="text-xs lg:text-sm text-blue-100 dark:text-slate-400">{dateLabel}</span>
+        <TimeToggle active={timeWindow} onChange={setTimeWindow} />
+      </div>
 
       {/* Resort Map */}
       <ResortMap resorts={mapResorts} />
