@@ -88,9 +88,10 @@ export default function ResortMap({ resorts }: { resorts: MapResort[] }) {
   ];
 
   // Use different tile layers for light/dark mode
+  // OpenTopoMap for light mode (green terrain), Carto dark for dark mode
   const tileUrl = isDark
     ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}";
+    : "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png";
 
   return (
     <div className="mx-4 md:mx-6 lg:mx-8 mt-3 h-48 md:h-64 lg:h-80 rounded-xl overflow-hidden border border-white/10 dark:border-gray-700 transition-colors">
@@ -105,7 +106,7 @@ export default function ResortMap({ resorts }: { resorts: MapResort[] }) {
         <TileLayer
           key={isDark ? "dark" : "light"}
           url={tileUrl}
-          subdomains={isDark ? ["a", "b", "c", "d"] : []}
+          subdomains={["a", "b", "c"]}
         />
         <FitBounds resorts={resorts} />
         {markers.map((r) => (
