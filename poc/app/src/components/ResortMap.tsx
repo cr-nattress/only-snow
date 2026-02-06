@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -36,6 +36,7 @@ function createSnowIcon(snowfallTotal: number, snowfallDisplay: string) {
       border:2px solid rgba(255,255,255,0.8);
       box-shadow:0 1px 4px rgba(0,0,0,0.3);
       line-height:1;
+      transition: transform 0.2s ease;
     ">${label}</div>`,
   });
 }
@@ -52,7 +53,24 @@ function FitBounds({ resorts }: { resorts: MapResort[] }) {
   return null;
 }
 
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setIsDark(mq.matches);
+
+    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  return isDark;
+}
+
 export default function ResortMap({ resorts }: { resorts: MapResort[] }) {
+  const isDark = useDarkMode();
+
   const markers = useMemo(
     () =>
       resorts.map((r) => ({
@@ -69,8 +87,13 @@ export default function ResortMap({ resorts }: { resorts: MapResort[] }) {
     resorts.reduce((s, r) => s + r.lng, 0) / resorts.length,
   ];
 
+  // Use different tile layers for light/dark mode
+  const tileUrl = isDark
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}";
+
   return (
-    <div className="mx-4 md:mx-6 lg:mx-8 mt-3 h-48 md:h-64 lg:h-80 rounded-xl overflow-hidden border border-white/10">
+    <div className="mx-4 md:mx-6 lg:mx-8 mt-3 h-48 md:h-64 lg:h-80 rounded-xl overflow-hidden border border-white/10 dark:border-gray-700 transition-colors">
       <MapContainer
         center={center}
         zoom={7}
@@ -79,7 +102,11 @@ export default function ResortMap({ resorts }: { resorts: MapResort[] }) {
         className="h-full w-full"
         attributionControl={false}
       >
-        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}" />
+        <TileLayer
+          key={isDark ? "dark" : "light"}
+          url={tileUrl}
+          subdomains={isDark ? ["a", "b", "c", "d"] : []}
+        />
         <FitBounds resorts={resorts} />
         {markers.map((r) => (
           <Marker key={r.id} position={[r.lat, r.lng]} icon={r.icon}>

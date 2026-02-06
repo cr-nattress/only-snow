@@ -507,6 +507,191 @@ export const paChaseTrip: Scenario = {
   },
 };
 
+// ─── Scenario 5: Denver Epic, Big Powder Day ─────────────────────────
+// Fresh overnight dump, all resorts stacked
+
+export const denverPowderDay: Scenario = {
+  id: "denver-powder",
+  name: "Denver Epic — Powder Day",
+  description: "8-12\" overnight across the I-70 corridor. Get out there.",
+  location: "Denver, CO",
+  pass: "epic",
+  passLabel: "Epic",
+  date: "Thu Feb 13",
+  yourResorts: [
+    {
+      resort: resorts.vail,
+      snowfall24hr: 12,
+      baseDepth: 49,
+      openPercent: 95,
+      trailsOpen: 263,
+      trailsTotal: 277,
+      liftsOpen: 31,
+      liftsTotal: 33,
+      conditions: "Powder",
+      forecasts: {
+        "5day": { display: "14\"", sort: 14, daily: [4, 2, 0, 0, 0] },
+        "10day": { display: "16-20\"", sort: 18, daily: [4, 2, 0, 0, 0, 0, 2, 2, 1, 0] },
+      },
+    },
+    {
+      resort: resorts.breckenridge,
+      snowfall24hr: 10,
+      baseDepth: 36,
+      openPercent: 88,
+      trailsOpen: 244,
+      trailsTotal: 277,
+      liftsOpen: 29,
+      liftsTotal: 33,
+      conditions: "Powder",
+      forecasts: {
+        "5day": { display: "12\"", sort: 12, daily: [3, 1, 0, 0, 0] },
+        "10day": { display: "14-18\"", sort: 16, daily: [3, 1, 0, 0, 0, 0, 2, 2, 1, 0] },
+      },
+    },
+    {
+      resort: resorts.keystone,
+      snowfall24hr: 8,
+      baseDepth: 34,
+      openPercent: 85,
+      trailsOpen: 109,
+      trailsTotal: 128,
+      liftsOpen: 17,
+      liftsTotal: 20,
+      conditions: "Powder",
+      forecasts: {
+        "5day": { display: "10\"", sort: 10, daily: [2, 1, 0, 0, 0] },
+        "10day": { display: "12-14\"", sort: 13, daily: [2, 1, 0, 0, 0, 0, 1, 2, 1, 0] },
+      },
+    },
+  ],
+  worthKnowing: [],
+  stormTracker: {
+    severity: "quiet",
+    text: "Storm delivered. Next system possible in 6 days.",
+  },
+  recommendation: {
+    onPass: "Vail — 12\" overnight, most on the corridor. Back Bowls will be DEEP. Leave NOW. First chair 8:30 AM.",
+    bestSnow: "They're all good. Vail has the most terrain to spread the crowds.",
+    bestValue: "Keystone — 8\" overnight, closest drive. Night skiing tonight to extend the day.",
+  },
+  aiAnalysis: "This is it — the powder day you've been waiting for. Vail has 12\" overnight with 4\" more today. Back Bowls, Blue Sky Basin, Game Creek — all loaded. Best strategy: arrive by 8 AM, hit Back Bowls first (they open at 9 AM), work your way to Blue Sky by 11 AM before it gets tracked. If Vail is too crowded, Beaver Creek has 10\" and far fewer people. This snow will be good through the weekend.",
+  contextBanner: "❄️ POWDER DAY — 8-12\" overnight across the corridor. Best day of the season. GO!",
+  timeWindows: {
+    "5day": {
+      dateLabel: "Next 5 Days · Feb 13-18",
+      dailyLabels: ["Thu", "Fri", "Sat", "Sun", "Mon"],
+      recommendation: {
+        onPass: "Vail — 12\" overnight, 4\" more today. Back Bowls are LOADED. Leave NOW.",
+        bestSnow: "All your resorts are stacked. Pick by proximity or crowd preference.",
+        bestValue: "Today and tomorrow are the days. Weekend will be packed but still good.",
+      },
+      contextBanner: "❄️ POWDER DAY — 8-12\" overnight. Best day of the season. GO!",
+    },
+    "10day": {
+      dateLabel: "Next 10 Days · Feb 13-23",
+      dailyLabels: ["Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      recommendation: {
+        onPass: "Vail — 16-20\" total over 10 days. Second system arriving mid-week.",
+        bestSnow: "Two powder windows: Today-Friday and next Wed-Thu.",
+        bestValue: "Ski today, rest this weekend, ski again next Thursday.",
+      },
+      contextBanner: "❄️ Two storm cycles in 10 days. Vail 16-20\" total. Season is ON.",
+    },
+  },
+};
+
+// ─── Scenario 6: Denver Epic, Dry Week ───────────────────────────────
+// No snow in sight, groomed conditions only
+
+export const denverDryWeek: Scenario = {
+  id: "denver-flatline",
+  name: "Denver Epic — Dry Week",
+  description: "High pressure locked in. Groomers only for the next 10 days.",
+  location: "Denver, CO",
+  pass: "epic",
+  passLabel: "Epic",
+  date: "Mon Feb 17",
+  yourResorts: [
+    {
+      resort: resorts.breckenridge,
+      snowfall24hr: 0,
+      baseDepth: 28,
+      openPercent: 72,
+      trailsOpen: 199,
+      trailsTotal: 277,
+      liftsOpen: 24,
+      liftsTotal: 33,
+      conditions: "Groomed",
+      forecasts: {
+        "5day": { display: "0\"", sort: 0, daily: [0, 0, 0, 0, 0] },
+        "10day": { display: "0-2\"", sort: 1, daily: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1] },
+      },
+    },
+    {
+      resort: resorts.vail,
+      snowfall24hr: 0,
+      baseDepth: 40,
+      openPercent: 68,
+      trailsOpen: 188,
+      trailsTotal: 277,
+      liftsOpen: 22,
+      liftsTotal: 33,
+      conditions: "Groomed",
+      forecasts: {
+        "5day": { display: "0\"", sort: 0, daily: [0, 0, 0, 0, 0] },
+        "10day": { display: "0-2\"", sort: 1, daily: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1] },
+      },
+    },
+    {
+      resort: resorts.keystone,
+      snowfall24hr: 0,
+      baseDepth: 26,
+      openPercent: 75,
+      trailsOpen: 96,
+      trailsTotal: 128,
+      liftsOpen: 15,
+      liftsTotal: 20,
+      conditions: "Groomed",
+      forecasts: {
+        "5day": { display: "0\"", sort: 0, daily: [0, 0, 0, 0, 0] },
+        "10day": { display: "0-1\"", sort: 0.5, daily: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
+      },
+    },
+  ],
+  worthKnowing: [],
+  stormTracker: {
+    severity: "quiet",
+    text: "High pressure dominates. No significant snow in the extended forecast.",
+  },
+  recommendation: {
+    onPass: "Breckenridge — best grooming operation on your pass. Peak 6 bowls hold snow well.",
+    bestValue: "Keystone — closest drive, night skiing makes it a full day without the long drive home in the dark.",
+  },
+  aiAnalysis: "Not much to work with here — high pressure is locked in and models show no relief for 10+ days. If you're going to ski, focus on quality groomers. Breckenridge has the best grooming crew and Peak 6 holds snow better than most. Vail's front side grooms well. Avoid Back Bowls — they're baked out. Consider taking the week off and waiting for the next cycle. Spring skiing starts in March.",
+  contextBanner: "☀️ High pressure pattern. Groomed skiing only. Next storm possible late February.",
+  timeWindows: {
+    "5day": {
+      dateLabel: "Next 5 Days · Feb 17-22",
+      dailyLabels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+      recommendation: {
+        onPass: "Breckenridge — best groomers. Go early, leave by 2 PM when conditions soften.",
+        bestValue: "Save your days for when it snows. Nothing special happening this week.",
+      },
+      contextBanner: "☀️ Dry pattern. Groomed skiing only. Manage expectations.",
+    },
+    "10day": {
+      dateLabel: "Next 10 Days · Feb 17-27",
+      dailyLabels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"],
+      recommendation: {
+        onPass: "No snow in sight. If you must ski, Breckenridge or Keystone for quality groomers.",
+        bestValue: "Honestly? Take the week off. Save your energy and PTO for the next cycle.",
+      },
+      contextBanner: "☀️ Extended dry pattern. Models show possible change late month. Check back next week.",
+    },
+  },
+};
+
 // ─── All scenarios ───────────────────────────────────────────────────
 
 export const scenarios: Scenario[] = [
@@ -514,6 +699,8 @@ export const scenarios: Scenario[] = [
   denverStormIncoming,
   avonPowderDay,
   paChaseTrip,
+  denverPowderDay,
+  denverDryWeek,
 ];
 
 // ─── Chase Mode Data ─────────────────────────────────────────────────
