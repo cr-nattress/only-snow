@@ -11,6 +11,8 @@ export const CacheKeys = {
   roadConditions: (route: string) => `onlysnow:road:${route}`,
   snowpack: (stationId: string) => `onlysnow:snowpack:${stationId}`,
   driveTimes: (originCity: string) => `onlysnow:drive-times:${originCity}`,
+  narrativeDashboard: (region: string) => `onlysnow:narrative:dashboard:${region}`,
+  narrativeResort: (resortId: number) => `onlysnow:narrative:resort:${resortId}`,
 } as const;
 
 /** TTL values in seconds */
@@ -24,4 +26,6 @@ export const CacheTTL = {
   ROAD_CONDITIONS: 5 * 60, // 5 minutes
   SNOWPACK: 6 * 60 * 60, // 6 hours
   DRIVE_TIMES: 7 * 24 * 60 * 60, // 7 days
+  NARRATIVE_DASHBOARD: 6 * 60 * 60, // 6 hours (matches forecast refresh)
+  NARRATIVE_RESORT: 2 * 60 * 60, // 2 hours (matches conditions refresh)
 } as const;
