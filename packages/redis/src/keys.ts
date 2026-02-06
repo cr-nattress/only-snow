@@ -10,6 +10,7 @@ export const CacheKeys = {
   chaseAlerts: () => `onlysnow:chase-alerts`,
   roadConditions: (route: string) => `onlysnow:road:${route}`,
   snowpack: (stationId: string) => `onlysnow:snowpack:${stationId}`,
+  driveTimes: (originCity: string) => `onlysnow:drive-times:${originCity}`,
 } as const;
 
 /** TTL values in seconds */

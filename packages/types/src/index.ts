@@ -163,6 +163,13 @@ export interface TripEstimate {
   };
 }
 
+export interface DriveTime {
+  resortId: number;
+  resortName: string;
+  durationMinutes: number;
+  distanceMiles: number;
+}
+
 export interface UserPreferences {
   passType: string | null;
   location: string | null;

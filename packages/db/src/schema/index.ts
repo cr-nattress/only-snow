@@ -7,3 +7,4 @@ export { snotelStations, snotelReadings } from './snotel.js';
 export { avalancheZones } from './avalanche-zones.js';
 export { users } from './users.js';
 export { savedTrips } from './saved-trips.js';
+export { driveTimes } from './drive-times.js';
