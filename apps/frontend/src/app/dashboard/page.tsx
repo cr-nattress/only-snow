@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { scenarios } from "@/data/scenarios";
 import { TimeWindow } from "@/data/types";
 import ResortTable from "@/components/ResortTable";
 import AiAnalysis from "@/components/ExpertTake";
 import PromptInput from "@/components/ScenarioSwitcher";
+import { usePreferences } from "@/context/PreferencesContext";
 import type { MapResort } from "@/components/ResortMap";
 
 const ResortMap = dynamic(() => import("@/components/ResortMap"), { ssr: false });
@@ -15,6 +17,16 @@ const ResortMap = dynamic(() => import("@/components/ResortMap"), { ssr: false }
 const timeWindow: TimeWindow = "10day";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { loaded, hasPreferences } = usePreferences();
+
+  // Redirect new users to onboarding
+  useEffect(() => {
+    if (loaded && !hasPreferences) {
+      router.replace("/onboarding");
+    }
+  }, [loaded, hasPreferences, router]);
+
   const [activeScenarioId, setActiveScenarioId] = useState(scenarios[0].id);
 
   const scenario = scenarios.find((s) => s.id === activeScenarioId) || scenarios[0];
