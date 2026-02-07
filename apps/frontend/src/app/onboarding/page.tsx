@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { usePersona } from "@/context/PersonaContext";
 import { usePreferences } from "@/context/PreferencesContext";
@@ -14,6 +14,7 @@ import {
   OnboardingSignals,
   UserPersona,
 } from "@/data/types";
+import type { OnboardingRecommendationResponse } from "@onlysnow/types";
 import { classifyPersona, getClassificationReason } from "@/lib/personaClassifier";
 
 type Step =
@@ -84,12 +85,8 @@ const childAgeOptions = [
   { value: 17, label: "16+", description: "Keeping up with adults" },
 ];
 
-const mockDetectedResorts = [
-  { name: "Vail", pass: "Epic", drive: "1h 40m" },
-  { name: "Breckenridge", pass: "Epic", drive: "1h 30m" },
-  { name: "Keystone", pass: "Epic", drive: "1h 30m" },
-  { name: "Beaver Creek", pass: "Epic", drive: "1h 50m" },
-];
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -114,6 +111,11 @@ export default function OnboardingPage() {
   const [detectedPersona, setDetectedPersona] = useState<UserPersona | null>(null);
   const [showPersonaOverride, setShowPersonaOverride] = useState(false);
 
+  // Recommendation state
+  const [recommendations, setRecommendations] = useState<OnboardingRecommendationResponse | null>(null);
+  const [loadingRecs, setLoadingRecs] = useState(false);
+  const [recsError, setRecsError] = useState(false);
+
   // Calculate step order and progress
   const stepOrder: Step[] = useMemo(() => {
     const order: Step[] = ["location", "pass", "radius", "frequency", "group"];
@@ -129,6 +131,41 @@ export default function OnboardingPage() {
 
   const stepIndex = stepOrder.indexOf(step);
   const totalSteps = stepOrder.filter((s) => s !== "confirm").length;
+
+  // Fetch recommendations when entering the confirm step
+  const fetchRecommendations = useCallback(async () => {
+    setLoadingRecs(true);
+    setRecsError(false);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/onboarding/recommendations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          location,
+          passType: pass,
+          driveRadius: radius,
+          persona: detectedPersona?.primary ?? "core-local",
+          experience,
+          frequency,
+          groupType: group,
+          triggers,
+        }),
+      });
+      if (!res.ok) throw new Error("API error");
+      const data: OnboardingRecommendationResponse = await res.json();
+      setRecommendations(data);
+    } catch {
+      setRecsError(true);
+    } finally {
+      setLoadingRecs(false);
+    }
+  }, [location, pass, radius, detectedPersona, experience, frequency, group, triggers]);
+
+  useEffect(() => {
+    if (step === "confirm") {
+      fetchRecommendations();
+    }
+  }, [step, fetchRecommendations]);
 
   function classifyAndContinue() {
     if (!frequency || !group || !experience || triggers.length === 0) return;
@@ -636,27 +673,55 @@ export default function OnboardingPage() {
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Here&apos;s what we found</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
-                {mockDetectedResorts.length} resorts on your pass within{" "}
-                {radiusOptions.find((r) => r.value === radius)?.label || "2 hours"}.
+                {loadingRecs
+                  ? "Finding your resorts..."
+                  : recommendations
+                    ? recommendations.summary
+                    : recsError
+                      ? `Resorts within ${radiusOptions.find((r) => r.value === radius)?.label || "2 hours"} of ${location}.`
+                      : "Finding your resorts..."}
               </p>
             </div>
 
-            <div className="space-y-2">
-              {mockDetectedResorts.map((r) => (
-                <div
-                  key={r.name}
-                  className="flex items-center justify-between px-4 lg:px-5 py-3 lg:py-3.5 bg-gray-50 dark:bg-slate-800 rounded-xl"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm lg:text-base font-medium text-gray-900 dark:text-white">{r.name}</span>
-                    <span className="text-[10px] lg:text-xs px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 font-medium">
-                      {r.pass}
-                    </span>
+            {loadingRecs && (
+              <div className="flex flex-col items-center py-8 gap-3">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm text-gray-500 dark:text-slate-400">Analyzing resorts for you...</p>
+              </div>
+            )}
+
+            {!loadingRecs && recommendations && (
+              <div className="space-y-2">
+                {recommendations.recommendations.map((r) => (
+                  <div
+                    key={r.slug}
+                    className="px-4 lg:px-5 py-3 lg:py-3.5 bg-gray-50 dark:bg-slate-800 rounded-xl"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm lg:text-base font-medium text-gray-900 dark:text-white">{r.name}</span>
+                      <span className="text-[10px] lg:text-xs px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 font-medium">
+                        {r.passType}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">{r.reason}</p>
                   </div>
-                  <span className="text-xs lg:text-sm text-gray-500 dark:text-slate-400">{r.drive}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
+
+            {!loadingRecs && recsError && (
+              <div className="text-center py-6">
+                <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
+                  We couldn&apos;t load personalized recommendations right now.
+                </p>
+                <button
+                  onClick={fetchRecommendations}
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
 
             {detectedPersona && (
               <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl">
@@ -672,9 +737,12 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            <p className="text-xs lg:text-sm text-gray-400 dark:text-slate-500 text-center">
-              We&apos;re also monitoring 5 other nearby resorts and will let you know when they&apos;re worth a look.
-            </p>
+            {!loadingRecs && recommendations && recommendations.totalMatching > recommendations.recommendations.length && (
+              <p className="text-xs lg:text-sm text-gray-400 dark:text-slate-500 text-center">
+                We&apos;re also monitoring {recommendations.totalMatching - recommendations.recommendations.length} other
+                nearby resorts and will let you know when they&apos;re worth a look.
+              </p>
+            )}
           </div>
         )}
       </div>

@@ -23,6 +23,7 @@
     "setup": "./scripts/setup-local.sh"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.73.0",
     "@types/node": "^20",
     "dotenv-cli": "^11.0.0",
     "prettier": "^3.4.2",

@@ -78,7 +78,13 @@ export async function GET(request: NextRequest) {
           totalLifts: resort.totalLifts,
           totalTrails: resort.totalTrails,
           terrainAcres: resort.terrainAcres,
+          annualSnowfall: resort.annualSnowfall,
+          nightSkiing: resort.nightSkiing,
+          snowmakingPercent: resort.snowmakingPercent,
+          longestRun: resort.longestRun,
+          terrainParks: resort.terrainParks,
           website: resort.website,
+          webcamUrl: resort.webcamUrl,
           nearestAirport: resort.nearestAirport,
           conditions: conditions
             ? {

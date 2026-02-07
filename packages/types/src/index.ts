@@ -34,7 +34,13 @@ export interface ResortDetail extends ResortSummary {
   totalLifts: number | null;
   totalTrails: number | null;
   terrainAcres: number | null;
+  annualSnowfall: number | null;
+  nightSkiing: boolean | null;
+  snowmakingPercent: number | null;
+  longestRun: number | null;
+  terrainParks: number | null;
   website: string | null;
+  webcamUrl: string | null;
   nearestAirport: string | null;
   forecast: DailyForecast[];
   snowpack: SnowpackReading | null;
@@ -238,6 +244,21 @@ export interface PersonaHighlight {
   label: string;
   value: string;
   icon: string;
+}
+
+// Onboarding recommendation types
+export interface OnboardingRecommendation {
+  name: string;
+  slug: string;
+  passType: string;
+  reason: string;
+  currentConditions: string;
+}
+
+export interface OnboardingRecommendationResponse {
+  recommendations: OnboardingRecommendation[];
+  summary: string;
+  totalMatching: number;
 }
 
 // API Query Parameters

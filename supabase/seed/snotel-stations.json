@@ -169,5 +169,86 @@
     "elevation": 8100,
     "state": "MT",
     "nearestResorts": ["bridger-bowl"]
+  },
+  {
+    "stationId": "490",
+    "name": "Galena Summit",
+    "lat": 43.87,
+    "lng": -114.71,
+    "elevation": 8790,
+    "state": "ID",
+    "nearestResorts": ["sun-valley"]
+  },
+  {
+    "stationId": "738",
+    "name": "Schweitzer Basin",
+    "lat": 48.37,
+    "lng": -116.64,
+    "elevation": 6090,
+    "state": "ID",
+    "nearestResorts": ["schweitzer-mountain"]
+  },
+  {
+    "stationId": "809",
+    "name": "Tahoe City Cross",
+    "lat": 39.17,
+    "lng": -120.15,
+    "elevation": 6760,
+    "state": "CA",
+    "nearestResorts": ["palisades-tahoe", "northstar-california"]
+  },
+  {
+    "stationId": "428",
+    "name": "Css Lab",
+    "lat": 39.33,
+    "lng": -120.37,
+    "elevation": 6890,
+    "state": "CA",
+    "nearestResorts": ["sugar-bowl", "boreal-mountain"]
+  },
+  {
+    "stationId": "846",
+    "name": "Virginia Lakes Ridge",
+    "lat": 38.07,
+    "lng": -119.23,
+    "elevation": 9400,
+    "state": "CA",
+    "nearestResorts": ["mammoth-mountain", "june-mountain"]
+  },
+  {
+    "stationId": "791",
+    "name": "Stevens Pass",
+    "lat": 47.75,
+    "lng": -121.09,
+    "elevation": 3940,
+    "state": "WA",
+    "nearestResorts": ["stevens-pass"]
+  },
+  {
+    "stationId": "672",
+    "name": "Olallie Meadows",
+    "lat": 47.37,
+    "lng": -121.44,
+    "elevation": 4010,
+    "state": "WA",
+    "nearestResorts": ["the-summit-at-snoqualmie"]
+  },
+  {
+    "stationId": "651",
+    "name": "Mt Hood Test Site",
+    "lat": 45.32,
+    "lng": -121.72,
+    "elevation": 5380,
+    "state": "OR",
+    "nearestResorts": ["mt-hood-meadows", "timberline-lodge", "mt-hood-skibowl"]
+  },
+  {
+    "stationId": "1103",
+    "name": "Mt. Alyeska",
+    "lat": 60.96,
+    "lng": -149.09,
+    "elevation": 1500,
+    "state": "AK",
+    "nearestResorts": ["alyeska-resort"]
   }
 ]

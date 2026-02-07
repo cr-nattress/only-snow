@@ -6,7 +6,7 @@ import { tryCreateRedisClient, CacheKeys, cache } from '@onlysnow/redis';
 
 const log = logger;
 
-interface SnotelData {
+export interface SnotelData {
   swe: number | null;
   sweMedianPct: number | null;
   snowDepth: number | null;
@@ -16,13 +16,14 @@ interface SnotelData {
 /**
  * Fetch SNOTEL data from USDA AWDB (Air-Water Database Service).
  * Free public API providing daily snowpack measurements.
+ *
+ * @param stationId - SNOTEL station numeric ID (e.g. "842")
+ * @param stateCode - Two-letter state code (e.g. "CO", "UT")
  */
-async function fetchSnotelData(stationId: string): Promise<SnotelData | null> {
+export async function fetchSnotelData(stationId: string, stateCode: string): Promise<SnotelData | null> {
   try {
-    const today = new Date().toISOString().split('T')[0];
-
     // USDA NRCS AWDB REST API
-    const url = `https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customSingleStationReport/daily/${stationId}:${getStateCode(stationId)}:SNTL%7Cid=%22%22%7Cname/-1,0/WTEQ::value,WTEQ::pctOfMedian_1991,SNWD::value,PREC::value`;
+    const url = `https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customSingleStationReport/daily/${stationId}:${stateCode}:SNTL%7Cid=%22%22%7Cname/-1,0/WTEQ::value,WTEQ::pctOfMedian_1991,SNWD::value,PREC::value`;
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -45,15 +46,11 @@ async function fetchSnotelData(stationId: string): Promise<SnotelData | null> {
       precipAccum: parseFloat(parts[4]) || null,
     };
   } catch (error) {
-    log.error(`Error fetching SNOTEL data for ${stationId}`, { error });
+    log.error(`Error fetching SNOTEL data for ${stationId}`, {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
-}
-
-function getStateCode(stationId: string): string {
-  // Station IDs typically include state code, but we'll default to CO
-  // In practice, the station_id in our DB has the full triplet
-  return 'CO';
 }
 
 http('snotelDaily', async (req, res) => {
@@ -78,7 +75,7 @@ http('snotelDaily', async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
 
   await batchProcess(stations, async (station) => {
-    const data = await fetchSnotelData(station.stationId);
+    const data = await fetchSnotelData(station.stationId, station.state ?? 'CO');
     if (!data) {
       errors++;
       return;

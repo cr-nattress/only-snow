@@ -1,0 +1,28 @@
+{
+  "name": "@onlysnow/scraper",
+  "version": "1.0.0",
+  "description": "OnlySnow resort data scraper with LLM extraction",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "scrape:test": "tsx src/index.ts --test",
+    "scrape:all": "tsx src/index.ts --all",
+    "extract": "tsx src/extract.ts",
+    "patch": "tsx src/patch-updates.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.17.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "playwright": "^1.40.0",
+    "robots-parser": "^3.0.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

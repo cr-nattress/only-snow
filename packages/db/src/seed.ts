@@ -34,8 +34,16 @@ interface ResortSeed {
   totalLifts: number | null;
   totalTrails: number | null;
   terrainAcres: number | null;
+  annualSnowfall: number | null;
+  terrainProfile: { beginner: number; intermediate: number; advanced: number } | null;
+  aspect: string | null;
+  nightSkiing: boolean | null;
+  snowmakingPercent: number | null;
+  longestRun: number | null;
+  terrainParks: number | null;
   nearestAirport: string | null;
   website: string | null;
+  webcamUrl: string | null;
 }
 
 interface SnotelStationSeed {
@@ -106,10 +114,35 @@ async function seed() {
         totalLifts: r.totalLifts,
         totalTrails: r.totalTrails,
         terrainAcres: r.terrainAcres,
+        annualSnowfall: r.annualSnowfall,
+        terrainProfile: r.terrainProfile,
+        aspect: r.aspect,
+        nightSkiing: r.nightSkiing,
+        snowmakingPercent: r.snowmakingPercent,
+        longestRun: r.longestRun,
+        terrainParks: r.terrainParks,
         nearestAirport: r.nearestAirport,
         website: r.website,
+        webcamUrl: r.webcamUrl,
       })
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: resorts.slug,
+        set: {
+          totalLifts: r.totalLifts,
+          totalTrails: r.totalTrails,
+          terrainAcres: r.terrainAcres,
+          annualSnowfall: r.annualSnowfall,
+          terrainProfile: r.terrainProfile,
+          aspect: r.aspect,
+          nightSkiing: r.nightSkiing,
+          snowmakingPercent: r.snowmakingPercent,
+          longestRun: r.longestRun,
+          terrainParks: r.terrainParks,
+          website: r.website,
+          webcamUrl: r.webcamUrl,
+          updatedAt: new Date(),
+        },
+      });
     resortCount++;
   }
   console.log(`  Inserted ${resortCount} resorts`);

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, jsonb, timestamp, real, index } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, jsonb, timestamp, real, boolean, index } from 'drizzle-orm/pg-core';
 import { chaseRegions } from './chase-regions.js';
 
 export const resorts = pgTable(
@@ -19,7 +19,13 @@ export const resorts = pgTable(
     totalLifts: integer('total_lifts'),
     totalTrails: integer('total_trails'),
     terrainAcres: integer('terrain_acres'),
+    annualSnowfall: integer('annual_snowfall'), // average annual snowfall in inches
+    nightSkiing: boolean('night_skiing'),
+    snowmakingPercent: integer('snowmaking_percent'), // % of terrain with snowmaking
+    longestRun: real('longest_run'), // longest run in miles
+    terrainParks: integer('terrain_parks'),
     website: text('website'),
+    webcamUrl: text('webcam_url'),
     nearestAirport: text('nearest_airport'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
