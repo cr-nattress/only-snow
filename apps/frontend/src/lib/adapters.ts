@@ -95,7 +95,12 @@ function alertToSeverity(alert: ChaseAlert): StormSeverity {
   return 'quiet';
 }
 
-export function toStormTracker(alerts: ChaseAlert[]): StormTrackerState {
+export function toStormTracker(
+  alerts: ChaseAlert[],
+  regionCoords?: Map<number, { lat: number; lng: number }>,
+  userLat?: number,
+  userLng?: number,
+): StormTrackerState {
   if (alerts.length === 0) {
     return {
       severity: 'quiet',
@@ -103,11 +108,38 @@ export function toStormTracker(alerts: ChaseAlert[]): StormTrackerState {
     };
   }
 
-  // Pick the most significant alert
-  const sorted = [...alerts].sort(
-    (a, b) => b.expectedSnowfall - a.expectedSnowfall,
-  );
-  const top = sorted[0];
+  let top: ChaseAlert;
+
+  if (regionCoords && userLat != null && userLng != null) {
+    const maxMiles = 600; // 10-hour drive
+    // Filter to nearby alerts, then pick the most significant
+    const nearby = alerts
+      .map((a) => {
+        const coords = regionCoords.get(a.regionId);
+        const dist = coords
+          ? haversineDistance(userLat, userLng, coords.lat, coords.lng)
+          : 9999;
+        return { alert: a, dist };
+      })
+      .filter((a) => a.dist <= maxMiles)
+      .sort((a, b) => b.alert.expectedSnowfall - a.alert.expectedSnowfall);
+
+    if (nearby.length > 0) {
+      top = nearby[0].alert;
+    } else {
+      return {
+        severity: 'quiet',
+        text: 'No major storms near you in the next 10 days.',
+      };
+    }
+  } else {
+    // No location — pick highest snowfall
+    const sorted = [...alerts].sort(
+      (a, b) => b.expectedSnowfall - a.expectedSnowfall,
+    );
+    top = sorted[0];
+  }
+
   const severity = alertToSeverity(top);
 
   const dates =
@@ -122,6 +154,22 @@ export function toStormTracker(alerts: ChaseAlert[]): StormTrackerState {
     forecastTotal: `${Math.round(top.expectedSnowfall)}"`,
     dates,
   };
+}
+
+/** Haversine distance in miles */
+function haversineDistance(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number,
+): number {
+  const R = 3959;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function formatDateRange(start: string, end: string): string {
@@ -165,6 +213,8 @@ export function toChaseRegions(regions: RegionSummary[]): ChaseRegion[] {
       ? `Best: ${r.bestResort.name} (${Math.round(r.bestResort.snowfall5Day)}" in 5 days)`
       : `${r.resortCount} resorts`,
     bestAirport: r.bestAirport ?? undefined,
+    lat: r.lat,
+    lng: r.lng,
   }));
 }
 

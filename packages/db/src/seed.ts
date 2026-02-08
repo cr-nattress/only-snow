@@ -81,17 +81,18 @@ async function seed() {
     .returning();
   console.log(`  Inserted ${insertedRegions.length} chase regions`);
 
-  // Build a slug -> region ID map
+  // Build a slug -> region ID map using the JSON slug field (not derived from name)
   const allRegions = await db.select().from(chaseRegions);
-  const regionSlugToId = new Map<string, number>();
+  const regionNameToId = new Map<string, number>();
   for (const region of allRegions) {
-    // Derive slug from name: "I-70 Corridor" -> "i70-corridor"
-    const slug = region.name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
-    regionSlugToId.set(slug, region.id);
+    regionNameToId.set(region.name, region.id);
+  }
+  const regionSlugToId = new Map<string, number>();
+  for (const r of regionsData) {
+    const id = regionNameToId.get(r.name);
+    if (id != null) {
+      regionSlugToId.set(r.slug, id);
+    }
   }
 
   console.log('Seeding resorts...');

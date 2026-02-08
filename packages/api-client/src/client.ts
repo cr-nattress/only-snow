@@ -32,8 +32,19 @@ export class OnlySnowApiClient {
     return res.json() as Promise<T>;
   }
 
-  async getResorts(): Promise<ResortSummary[]> {
-    return this.request<ResortSummary[]>('/api/resorts');
+  async getResorts(filters?: {
+    lat?: number;
+    lng?: number;
+    radiusMiles?: number;
+    passType?: string;
+  }): Promise<ResortSummary[]> {
+    const params = new URLSearchParams();
+    if (filters?.lat != null) params.set('lat', String(filters.lat));
+    if (filters?.lng != null) params.set('lng', String(filters.lng));
+    if (filters?.radiusMiles != null) params.set('radiusMiles', String(filters.radiusMiles));
+    if (filters?.passType) params.set('passType', filters.passType);
+    const qs = params.toString();
+    return this.request<ResortSummary[]>(`/api/resorts${qs ? `?${qs}` : ''}`);
   }
 
   async getResort(id: number | string): Promise<ResortDetail> {

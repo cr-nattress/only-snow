@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { fetchDashboardData } from "@/lib/data-provider";
 import type { DashboardData } from "@/lib/data-provider";
 import type { UserLocation } from "@/components/ResortMap";
 import ResortTable from "@/components/ResortTable";
@@ -11,32 +12,69 @@ import { geocodeLocation, driveMinutesToMiles } from "@/lib/geocode";
 
 const ResortMap = dynamic(() => import("@/components/ResortMap"), { ssr: false });
 
-interface ApiDashboardProps {
-  data: DashboardData;
-}
-
-export default function ApiDashboard({ data }: ApiDashboardProps) {
+export default function ApiDashboard() {
   const { preferences } = usePreferences();
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<UserLocation | undefined>();
 
-  // Geocode user location on mount
-  useEffect(() => {
-    async function loadUserLocation() {
-      if (!preferences.location) return;
+  const loadData = useCallback(async () => {
+    setLoading(true);
 
+    // Geocode user location for proximity filtering
+    let lat: number | undefined;
+    let lng: number | undefined;
+    let radiusMiles: number | undefined;
+
+    if (preferences.location) {
       const coords = await geocodeLocation(preferences.location);
-      if (!coords) return;
+      if (coords) {
+        lat = coords.lat;
+        lng = coords.lng;
+        radiusMiles = driveMinutesToMiles(preferences.driveRadius);
 
-      setUserLocation({
-        location: preferences.location,
-        lat: coords.lat,
-        lng: coords.lng,
-        driveRadiusMiles: driveMinutesToMiles(preferences.driveRadius),
-      });
+        setUserLocation({
+          location: preferences.location,
+          lat: coords.lat,
+          lng: coords.lng,
+          driveRadiusMiles: radiusMiles,
+        });
+      }
     }
 
-    loadUserLocation();
-  }, [preferences.location, preferences.driveRadius]);
+    try {
+      const result = await fetchDashboardData({
+        lat,
+        lng,
+        radiusMiles,
+        passType: preferences.passType && preferences.passType !== "none" && preferences.passType !== "multi"
+          ? preferences.passType
+          : undefined,
+      });
+      setData(result);
+    } catch {
+      // Fall back to unfiltered
+      const result = await fetchDashboardData();
+      setData(result);
+    } finally {
+      setLoading(false);
+    }
+  }, [preferences.location, preferences.driveRadius, preferences.passType]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  if (loading || !data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-500 dark:text-slate-400">Loading your resorts...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

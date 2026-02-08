@@ -52,18 +52,26 @@ export interface DashboardData {
   dateLabel: string;
 }
 
-export async function fetchDashboardData(): Promise<DashboardData> {
+export interface DashboardFilters {
+  lat?: number;
+  lng?: number;
+  radiusMiles?: number;
+  passType?: string;
+}
+
+export async function fetchDashboardData(filters?: DashboardFilters): Promise<DashboardData> {
   if (!isApiMode()) {
     throw new Error('fetchDashboardData should not be called in mock mode');
   }
 
   const client = getClient();
 
-  // Fetch resorts and chase alerts in parallel
-  const [resortSummaries, chaseAlerts, rankings] = await Promise.all([
-    client.getResorts(),
+  // Fetch resorts, chase alerts, rankings, and regions in parallel
+  const [resortSummaries, chaseAlerts, rankings, regionSummaries] = await Promise.all([
+    client.getResorts(filters),
     client.getChaseAlerts(),
     client.getSnowRankings(),
+    client.getRegions(),
   ]);
 
   // Build a snowfall lookup from rankings (slug → snowfall)
@@ -82,8 +90,12 @@ export async function fetchDashboardData(): Promise<DashboardData> {
   // Sort by forecast (highest first)
   resorts.sort((a, b) => b.forecasts['10day'].sort - a.forecasts['10day'].sort);
 
-  // Build storm tracker from chase alerts
-  const stormTracker = toStormTracker(chaseAlerts);
+  // Build storm tracker from chase alerts (prefer nearby alerts when user location available)
+  const regionCoords = new Map<number, { lat: number; lng: number }>();
+  for (const r of regionSummaries) {
+    regionCoords.set(r.id, { lat: r.lat, lng: r.lng });
+  }
+  const stormTracker = toStormTracker(chaseAlerts, regionCoords, filters?.lat, filters?.lng);
 
   // Build recommendation from top resorts
   const top = resorts[0];
@@ -126,7 +138,29 @@ export interface ChasePageData {
   regions: ChaseRegion[];
 }
 
-export async function fetchChasePageData(): Promise<ChasePageData> {
+export interface ChaseFilters {
+  lat?: number;
+  lng?: number;
+  radiusMiles?: number;
+}
+
+/** Haversine distance in miles between two coordinates */
+function haversineDistance(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number,
+): number {
+  const R = 3959; // Earth's radius in miles
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export async function fetchChasePageData(filters?: ChaseFilters): Promise<ChasePageData> {
   if (!isApiMode()) {
     throw new Error('fetchChasePageData should not be called in mock mode');
   }
@@ -135,13 +169,35 @@ export async function fetchChasePageData(): Promise<ChasePageData> {
   const regionSummaries = await client.getRegions();
   const regions = toChaseRegions(regionSummaries);
 
-  // Sort by severity (most active first)
   const severityOrder: Record<string, number> = {
     chase: 0,
     significant: 1,
     moderate: 2,
     quiet: 3,
   };
+
+  if (filters?.lat != null && filters?.lng != null) {
+    const maxMiles = filters.radiusMiles ?? 600; // default 10hr drive
+
+    // Filter to regions within driving range
+    const nearby = regions.filter((r) => {
+      const dist = haversineDistance(filters.lat!, filters.lng!, r.lat, r.lng);
+      return dist <= maxMiles;
+    });
+
+    // Sort by severity first, then distance within same severity
+    nearby.sort((a, b) => {
+      const sevDiff = (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9);
+      if (sevDiff !== 0) return sevDiff;
+      const distA = haversineDistance(filters.lat!, filters.lng!, a.lat, a.lng);
+      const distB = haversineDistance(filters.lat!, filters.lng!, b.lat, b.lng);
+      return distA - distB;
+    });
+
+    return { regions: nearby };
+  }
+
+  // No location — sort by severity only
   regions.sort(
     (a, b) =>
       (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9),

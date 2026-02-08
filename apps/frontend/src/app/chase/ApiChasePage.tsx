@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import type { ChasePageData, RegionComparisonData } from "@/lib/data-provider";
-import { fetchRegionComparison } from "@/lib/data-provider";
+import type { RegionComparisonData } from "@/lib/data-provider";
+import { fetchChasePageData, fetchRegionComparison } from "@/lib/data-provider";
 import type { ChaseRegion, StormSeverity } from "@/data/types";
+import { usePreferences } from "@/context/PreferencesContext";
+import { geocodeLocation } from "@/lib/geocode";
 
 const severityConfig: Partial<Record<StormSeverity, { bg: string; border: string; text: string; label: string; icon: string }>> = {
   quiet: { bg: "bg-gray-50 dark:bg-slate-700", border: "border-gray-200 dark:border-slate-600", text: "text-gray-500 dark:text-slate-400", label: "QUIET", icon: "" },
@@ -23,15 +25,46 @@ const passBadge: Record<string, { bg: string; text: string; label: string }> = {
 
 type View = "national" | "region";
 
-interface ApiChasePageProps {
-  data: ChasePageData;
-}
-
-export default function ApiChasePage({ data }: ApiChasePageProps) {
+export default function ApiChasePage() {
+  const { preferences } = usePreferences();
+  const [regions, setRegions] = useState<ChaseRegion[]>([]);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("national");
   const [selectedRegion, setSelectedRegion] = useState<ChaseRegion | null>(null);
   const [comparison, setComparison] = useState<RegionComparisonData | null>(null);
   const [loadingComparison, setLoadingComparison] = useState(false);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+
+    let lat: number | undefined;
+    let lng: number | undefined;
+
+    if (preferences.location) {
+      const coords = await geocodeLocation(preferences.location);
+      if (coords) {
+        lat = coords.lat;
+        lng = coords.lng;
+      }
+    }
+
+    // 10-hour drive ≈ 600 miles
+    const radiusMiles = 600;
+
+    try {
+      const data = await fetchChasePageData({ lat, lng, radiusMiles });
+      setRegions(data.regions);
+    } catch {
+      const data = await fetchChasePageData();
+      setRegions(data.regions);
+    } finally {
+      setLoading(false);
+    }
+  }, [preferences.location]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     if (view === "region" && selectedRegion) {
@@ -43,6 +76,17 @@ export default function ApiChasePage({ data }: ApiChasePageProps) {
         .finally(() => setLoadingComparison(false));
     }
   }, [view, selectedRegion]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-500 dark:text-slate-400">Loading storm data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -66,7 +110,11 @@ export default function ApiChasePage({ data }: ApiChasePageProps) {
               {view === "national" ? "Storm Tracker" : selectedRegion?.name}
             </h1>
             <p className="text-xs lg:text-sm text-blue-100 dark:text-slate-400">
-              {view === "national" ? "National Overview · Next 10 Days" : selectedRegion?.dates}
+              {view === "national"
+                ? preferences.location
+                  ? `Near ${preferences.location} · Next 10 Days`
+                  : "National Overview · Next 10 Days"
+                : selectedRegion?.dates}
             </p>
           </div>
         </div>
@@ -83,7 +131,7 @@ export default function ApiChasePage({ data }: ApiChasePageProps) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
-            {data.regions.map((r) => {
+            {regions.map((r) => {
               const config = severityConfig[r.severity] ?? defaultSeverityConfig;
               return (
                 <button

@@ -56,7 +56,7 @@
     "lng": -111.86
   },
   {
-    "name": "Taos & Northern NM",
+    "name": "Taos Area",
     "slug": "taos-area",
     "bestAirport": "ABQ",
     "lat": 36.6,
@@ -70,10 +70,304 @@
     "lng": -110.85
   },
   {
-    "name": "Big Sky & SW Montana",
+    "name": "Big Sky Area",
     "slug": "big-sky-area",
     "bestAirport": "BZN",
     "lat": 45.28,
     "lng": -111.4
+  },
+  {
+    "name": "Poconos",
+    "slug": "poconos",
+    "bestAirport": "ABE",
+    "lat": 41.05,
+    "lng": -75.35
+  },
+  {
+    "name": "Laurel Highlands",
+    "slug": "laurel-highlands",
+    "bestAirport": "PIT",
+    "lat": 40.02,
+    "lng": -79.30
+  },
+  {
+    "name": "Northern Vermont",
+    "slug": "northern-vermont",
+    "bestAirport": "BTV",
+    "lat": 44.53,
+    "lng": -72.78
+  },
+  {
+    "name": "Central Vermont",
+    "slug": "central-vermont",
+    "bestAirport": "BTV",
+    "lat": 43.60,
+    "lng": -72.82
+  },
+  {
+    "name": "Southern Vermont",
+    "slug": "southern-vermont",
+    "bestAirport": "ALB",
+    "lat": 43.00,
+    "lng": -72.80
+  },
+  {
+    "name": "Northeast Kingdom",
+    "slug": "northeast-kingdom",
+    "bestAirport": "BTV",
+    "lat": 44.59,
+    "lng": -71.94
+  },
+  {
+    "name": "White Mountains",
+    "slug": "white-mountains",
+    "bestAirport": "MHT",
+    "lat": 44.10,
+    "lng": -71.45
+  },
+  {
+    "name": "Lakes Region NH",
+    "slug": "lakes-region-nh",
+    "bestAirport": "MHT",
+    "lat": 43.37,
+    "lng": -72.08
+  },
+  {
+    "name": "Western Maine",
+    "slug": "western-maine",
+    "bestAirport": "PWM",
+    "lat": 44.47,
+    "lng": -70.85
+  },
+  {
+    "name": "Southern Maine",
+    "slug": "southern-maine",
+    "bestAirport": "PWM",
+    "lat": 44.09,
+    "lng": -70.80
+  },
+  {
+    "name": "Northern Maine",
+    "slug": "northern-maine",
+    "bestAirport": "BGR",
+    "lat": 46.75,
+    "lng": -68.02
+  },
+  {
+    "name": "Catskills",
+    "slug": "catskills",
+    "bestAirport": "ALB",
+    "lat": 42.13,
+    "lng": -74.25
+  },
+  {
+    "name": "Adirondacks",
+    "slug": "adirondacks",
+    "bestAirport": "ALB",
+    "lat": 44.37,
+    "lng": -73.98
+  },
+  {
+    "name": "Western NY",
+    "slug": "western-ny",
+    "bestAirport": "BUF",
+    "lat": 42.34,
+    "lng": -78.67
+  },
+  {
+    "name": "Central NY",
+    "slug": "central-ny",
+    "bestAirport": "SYR",
+    "lat": 42.59,
+    "lng": -76.18
+  },
+  {
+    "name": "Northern NJ",
+    "slug": "northern-nj",
+    "bestAirport": "EWR",
+    "lat": 41.18,
+    "lng": -74.49
+  },
+  {
+    "name": "Massachusetts",
+    "slug": "massachusetts",
+    "bestAirport": "ALB",
+    "lat": 42.50,
+    "lng": -73.17
+  },
+  {
+    "name": "Connecticut",
+    "slug": "connecticut",
+    "bestAirport": "BDL",
+    "lat": 41.87,
+    "lng": -72.95
+  },
+  {
+    "name": "Rhode Island",
+    "slug": "rhode-island",
+    "bestAirport": "PVD",
+    "lat": 41.52,
+    "lng": -71.72
+  },
+  {
+    "name": "West Virginia",
+    "slug": "west-virginia",
+    "bestAirport": "CKB",
+    "lat": 38.42,
+    "lng": -79.99
+  },
+  {
+    "name": "North Carolina",
+    "slug": "north-carolina",
+    "bestAirport": "AVL",
+    "lat": 36.07,
+    "lng": -82.07
+  },
+  {
+    "name": "Virginia",
+    "slug": "virginia",
+    "bestAirport": "CHO",
+    "lat": 37.97,
+    "lng": -78.88
+  },
+  {
+    "name": "Tennessee",
+    "slug": "tennessee",
+    "bestAirport": "TYS",
+    "lat": 35.72,
+    "lng": -83.43
+  },
+  {
+    "name": "Maryland",
+    "slug": "maryland",
+    "bestAirport": "CKB",
+    "lat": 39.56,
+    "lng": -79.48
+  },
+  {
+    "name": "Michigan",
+    "slug": "michigan",
+    "bestAirport": "TVC",
+    "lat": 45.17,
+    "lng": -84.93
+  },
+  {
+    "name": "Wisconsin",
+    "slug": "wisconsin",
+    "bestAirport": "CWA",
+    "lat": 45.17,
+    "lng": -89.58
+  },
+  {
+    "name": "Minnesota",
+    "slug": "minnesota",
+    "bestAirport": "DLH",
+    "lat": 47.49,
+    "lng": -91.22
+  },
+  {
+    "name": "Indiana",
+    "slug": "indiana",
+    "bestAirport": "CVG",
+    "lat": 39.08,
+    "lng": -84.85
+  },
+  {
+    "name": "Iowa",
+    "slug": "iowa",
+    "bestAirport": "DBQ",
+    "lat": 42.47,
+    "lng": -90.65
+  },
+  {
+    "name": "Ohio",
+    "slug": "ohio",
+    "bestAirport": "CAK",
+    "lat": 40.83,
+    "lng": -81.52
+  },
+  {
+    "name": "Missouri",
+    "slug": "missouri",
+    "bestAirport": "STL",
+    "lat": 38.52,
+    "lng": -90.82
+  },
+  {
+    "name": "Pacific Northwest",
+    "slug": "pacific-northwest",
+    "bestAirport": "PDX",
+    "lat": 45.33,
+    "lng": -121.71
+  },
+  {
+    "name": "Lake Tahoe",
+    "slug": "lake-tahoe",
+    "bestAirport": "RNO",
+    "lat": 39.20,
+    "lng": -120.24
+  },
+  {
+    "name": "Sierra Nevada",
+    "slug": "sierra-nevada",
+    "bestAirport": "FAT",
+    "lat": 37.63,
+    "lng": -119.03
+  },
+  {
+    "name": "Southern California",
+    "slug": "southern-california",
+    "bestAirport": "ONT",
+    "lat": 34.24,
+    "lng": -116.90
+  },
+  {
+    "name": "Nevada",
+    "slug": "nevada",
+    "bestAirport": "RNO",
+    "lat": 39.32,
+    "lng": -119.90
+  },
+  {
+    "name": "Alaska",
+    "slug": "alaska",
+    "bestAirport": "ANC",
+    "lat": 60.97,
+    "lng": -149.12
+  },
+  {
+    "name": "Arizona",
+    "slug": "arizona",
+    "bestAirport": "FLG",
+    "lat": 35.20,
+    "lng": -111.65
+  },
+  {
+    "name": "Northern Idaho",
+    "slug": "northern-idaho",
+    "bestAirport": "GEG",
+    "lat": 48.37,
+    "lng": -116.62
+  },
+  {
+    "name": "Boise Area",
+    "slug": "boise-area",
+    "bestAirport": "BOI",
+    "lat": 43.76,
+    "lng": -116.10
+  },
+  {
+    "name": "McCall Area",
+    "slug": "mccall-area",
+    "bestAirport": "BOI",
+    "lat": 44.73,
+    "lng": -116.10
+  },
+  {
+    "name": "Sun Valley Area",
+    "slug": "sun-valley-area",
+    "bestAirport": "SUN",
+    "lat": 43.70,
+    "lng": -114.35
   }
 ]

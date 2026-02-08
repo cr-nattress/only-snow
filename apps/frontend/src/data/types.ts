@@ -154,6 +154,8 @@ export interface ChaseRegion {
   resorts: string[];
   description: string;
   bestAirport?: string;
+  lat: number;
+  lng: number;
 }
 
 export interface TripPlan {
