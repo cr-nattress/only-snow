@@ -14,15 +14,9 @@ import type {
 } from '@onlysnow/types';
 import type { DailyForecast as FrontendDailyForecast } from '@/data/types';
 
+import { API_BASE_URL, isApiMode } from './api-config';
+
 // ── Configuration ───────────────────────────────────────────────────
-
-const DATA_SOURCE = process.env.NEXT_PUBLIC_DATA_SOURCE ?? 'mock';
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
-
-function isApiMode(): boolean {
-  return DATA_SOURCE === 'api';
-}
 
 let _client: OnlySnowApiClient | null = null;
 
