@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { usePersona } from "@/context/PersonaContext";
 import { getPersonaInfo, getPersonaInfoV2 } from "@/data/personas";
@@ -45,6 +46,8 @@ function getInitials(name: string | null | undefined): string {
 }
 
 export default function Header() {
+  const pathname = usePathname();
+  const isOnboarding = pathname === "/onboarding";
   const { data: session, status } = useSession();
   const { persona, userPersona, effectivePersonaType } = usePersona();
   const personaInfo = userPersona
@@ -83,7 +86,8 @@ export default function Header() {
       </Link>
 
       <div className="flex items-center gap-2">
-        {/* Persona Badge */}
+        {/* Persona Badge — hidden during onboarding */}
+        {!isOnboarding && (
         <Link
           href="/settings"
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/20 dark:bg-white/10 hover:bg-white/30 dark:hover:bg-white/20 transition-colors btn-press"
@@ -93,6 +97,7 @@ export default function Header() {
           <span className="text-sm">{userPersona ? getPersonaTypeEmoji(effectivePersonaType) : getPersonaEmoji(persona)}</span>
           <span className="text-xs font-medium text-white hidden md:inline">{personaInfo.label}</span>
         </Link>
+        )}
 
         {/* Account Icon */}
         {isAuthenticated ? (

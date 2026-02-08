@@ -373,10 +373,6 @@ export default function MockChasePage() {
         </div>
       )}
 
-      {/* Footer */}
-      <div className="px-4 md:px-6 lg:px-8 py-6 text-center">
-        <p className="text-[10px] lg:text-xs text-blue-200 dark:text-slate-500">POC — Storm Chase Mode</p>
-      </div>
     </div>
   );
 }

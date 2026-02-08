@@ -86,7 +86,8 @@ const childAgeOptions = [
   { value: 17, label: "16+", description: "Keeping up with adults" },
 ];
 
-import { API_BASE_URL } from "@/lib/api-config";
+import { API_BASE_URL, isApiMode } from "@/lib/api-config";
+import { resorts } from "@/data/resorts";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -137,23 +138,47 @@ export default function OnboardingPage() {
     setLoadingRecs(true);
     setRecsError(false);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/onboarding/recommendations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          location,
-          passType: pass,
-          driveRadius: radius,
-          persona: detectedPersona?.primary ?? "core-local",
-          experience,
-          frequency,
-          groupType: group,
-          triggers,
-        }),
-      });
-      if (!res.ok) throw new Error("API error");
-      const data: OnboardingRecommendationResponse = await res.json();
-      setRecommendations(data);
+      if (!isApiMode()) {
+        // Mock mode: build recommendations from local resort data
+        const passMatches = (resortPass: string, userPass: string) => {
+          if (userPass === "multi" || userPass === "none") return true;
+          return resortPass === userPass || resortPass === "independent";
+        };
+        const matching = Object.values(resorts).filter((r) => passMatches(r.passType, pass));
+        const top = matching.slice(0, 5);
+        const passLabel = pass !== "none" && pass !== "multi"
+          ? `${pass.charAt(0).toUpperCase() + pass.slice(1)} pass `
+          : "";
+        setRecommendations({
+          recommendations: top.map((r) => ({
+            name: r.name,
+            slug: r.id,
+            passType: r.passType,
+            reason: `${r.driveTime} from ${location}. ${r.region}.`,
+            currentConditions: "Check back for live conditions",
+          })),
+          summary: `We found ${matching.length} ${passLabel}resorts within driving distance of ${location}.`,
+          totalMatching: matching.length,
+        });
+      } else {
+        const res = await fetch(`${API_BASE_URL}/api/onboarding/recommendations`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location,
+            passType: pass,
+            driveRadius: radius,
+            persona: detectedPersona?.primary ?? "core-local",
+            experience,
+            frequency,
+            groupType: group,
+            triggers,
+          }),
+        });
+        if (!res.ok) throw new Error("API error");
+        const data: OnboardingRecommendationResponse = await res.json();
+        setRecommendations(data);
+      }
     } catch {
       setRecsError(true);
     } finally {

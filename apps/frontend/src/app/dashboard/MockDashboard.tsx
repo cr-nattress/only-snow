@@ -19,6 +19,7 @@ export default function MockDashboard() {
   const router = useRouter();
   const { loaded, hasPreferences, preferences } = usePreferences();
   const [activeScenarioId, setActiveScenarioId] = useState(scenarios[0].id);
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("5day");
   const [userLocation, setUserLocation] = useState<UserLocation | undefined>();
 
@@ -27,6 +28,28 @@ export default function MockDashboard() {
       router.replace("/onboarding");
     }
   }, [loaded, hasPreferences, router]);
+
+  // Auto-select best matching scenario based on user preferences
+  useEffect(() => {
+    if (!loaded || hasAutoSelected) return;
+    const userPass = preferences.passType?.toLowerCase() || "";
+    const userLoc = preferences.location?.toLowerCase() || "";
+
+    // Score each scenario by pass + location match
+    let best = scenarios[0];
+    let bestScore = -1;
+    for (const s of scenarios) {
+      let score = 0;
+      if (userPass && s.pass === userPass) score += 2;
+      if (userLoc && s.location.toLowerCase().includes(userLoc.split(",")[0].trim().toLowerCase())) score += 3;
+      if (score > bestScore) {
+        bestScore = score;
+        best = s;
+      }
+    }
+    setActiveScenarioId(best.id);
+    setHasAutoSelected(true);
+  }, [loaded, hasAutoSelected, preferences.passType, preferences.location]);
 
   // Geocode user location on mount
   useEffect(() => {
@@ -49,10 +72,29 @@ export default function MockDashboard() {
 
   const scenario = scenarios.find((s) => s.id === activeScenarioId) || scenarios[0];
 
-  // Get per-window data
+  // Get per-window data with dynamic date labels
   const windowData = scenario.timeWindows[timeWindow];
-  const dateLabel = windowData.dateLabel;
-  const dailyLabels = windowData.dailyLabels;
+  // Compute date label and day labels dynamically from today
+  const { dateLabel, dynamicDailyLabels } = useMemo(() => {
+    const now = new Date();
+    const days = timeWindow === "5day" ? 5 : 10;
+    const end = new Date(now);
+    end.setDate(end.getDate() + days - 1);
+    const fmt = (d: Date) =>
+      d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const dayFmt = (d: Date) =>
+      d.toLocaleDateString("en-US", { weekday: "short" });
+    const labels: string[] = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() + i);
+      labels.push(dayFmt(d));
+    }
+    return {
+      dateLabel: `Next ${days} Days \u00B7 ${fmt(now)}\u2013${fmt(end)}`,
+      dynamicDailyLabels: labels,
+    };
+  }, [timeWindow]);
   const worthKnowing = windowData.worthKnowing ?? scenario.worthKnowing;
 
   // Build map data using the selected time window
@@ -115,7 +157,7 @@ export default function MockDashboard() {
           resorts={scenario.yourResorts}
           storm={scenario.stormTracker}
           timeWindow={timeWindow}
-          dailyLabels={dailyLabels}
+          dailyLabels={dynamicDailyLabels}
           worthKnowing={worthKnowing}
         />
 
@@ -123,12 +165,6 @@ export default function MockDashboard() {
         {scenario.aiAnalysis && <AiAnalysis analysis={scenario.aiAnalysis} />}
       </div>
 
-      {/* POC footer */}
-      <div className="px-4 md:px-6 lg:px-8 py-6 text-center">
-        <p className="text-[10px] text-blue-200">
-          POC — OnlySnow · {scenario.name} · {dateLabel}
-        </p>
-      </div>
     </div>
   );
 }
