@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq, sql } from 'drizzle-orm';
 import { chaseRegions, resorts, forecasts } from '@onlysnow/db';
 import type { TripEstimate } from '@onlysnow/types';
@@ -25,7 +26,7 @@ function getRegionCode(regionName: string): string {
   return 'co';
 }
 
-export async function GET(
+export const GET = withLogging(async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ region: string }> },
 ) {
@@ -103,4 +104,4 @@ export async function GET(
   };
 
   return NextResponse.json(estimate);
-}
+});

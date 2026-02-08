@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq, sql } from 'drizzle-orm';
 import { resorts, resortConditions, forecasts } from '@onlysnow/db';
 import { CacheKeys, CacheTTL, cache } from '@onlysnow/redis';
@@ -14,7 +15,7 @@ export const dynamic = 'force-dynamic';
  *
  * Optional: ?persona=powder-hunter
  */
-export async function GET(request: NextRequest) {
+export const GET = withLogging(async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const type = params.get('type') ?? 'dashboard';
   const persona = params.get('persona') ?? undefined;
@@ -161,4 +162,4 @@ export async function GET(request: NextRequest) {
   );
 
   return NextResponse.json({ narrative });
-}
+});

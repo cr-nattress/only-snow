@@ -1,6 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import { log } from "@/lib/log";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
@@ -34,7 +35,7 @@ function SignInContent() {
         {/* Sign in buttons */}
         <div className="space-y-3">
           <button
-            onClick={() => signIn("google", { callbackUrl })}
+            onClick={() => { log("auth.google_signin"); signIn("google", { callbackUrl }); }}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors btn-press"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">

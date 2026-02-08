@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq } from 'drizzle-orm';
 import { forecasts, forecastHourly, resorts } from '@onlysnow/db';
 import type { ForecastResponse, DailyForecast, HourlyForecast, Freshness } from '@onlysnow/types';
@@ -8,7 +9,7 @@ import { getRedis } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
+export const GET = withLogging(async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -89,4 +90,4 @@ export async function GET(
   );
 
   return NextResponse.json(result);
-}
+});

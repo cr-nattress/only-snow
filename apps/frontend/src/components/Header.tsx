@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { usePersona } from "@/context/PersonaContext";
 import { getPersonaInfo, getPersonaInfoV2 } from "@/data/personas";
 import { Persona, PersonaType } from "@/data/types";
+import { log } from "@/lib/log";
 
 function getPersonaEmoji(p: Persona): string {
   switch (p) {
@@ -74,7 +75,7 @@ export default function Header() {
       }`}
       style={{ paddingTop: "calc(0.625rem + env(safe-area-inset-top))" }}
     >
-      <Link href="/dashboard" className="flex items-center gap-1.5 btn-press">
+      <Link href="/dashboard" className="flex items-center gap-1.5 btn-press" onClick={() => log("nav.logo_click")}>
         <span className="text-lg lg:text-xl">🏔️</span>
         <span className="text-lg lg:text-xl font-extrabold tracking-tight text-white">
           Only<span className="text-blue-100 dark:text-blue-300">Snow</span>
@@ -87,6 +88,7 @@ export default function Header() {
           href="/settings"
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/20 dark:bg-white/10 hover:bg-white/30 dark:hover:bg-white/20 transition-colors btn-press"
           title={`${personaInfo.label}: ${personaInfo.focus}`}
+          onClick={() => log("nav.persona_badge_click")}
         >
           <span className="text-sm">{userPersona ? getPersonaTypeEmoji(effectivePersonaType) : getPersonaEmoji(persona)}</span>
           <span className="text-xs font-medium text-white hidden md:inline">{personaInfo.label}</span>
@@ -98,6 +100,7 @@ export default function Header() {
             href="/settings"
             className="w-8 h-8 lg:w-9 lg:h-9 rounded-full overflow-hidden bg-white/20 dark:bg-white/10 flex items-center justify-center hover:ring-2 hover:ring-white/50 transition-all btn-press"
             title={userName || "Account"}
+            onClick={() => log("nav.account_click")}
           >
             {userImage ? (
               <Image
@@ -115,6 +118,7 @@ export default function Header() {
           <Link
             href="/auth/signin"
             className="px-3 py-1.5 rounded-full bg-white/20 dark:bg-white/10 hover:bg-white/30 dark:hover:bg-white/20 transition-colors btn-press"
+            onClick={() => log("nav.account_click")}
           >
             <span className="text-xs font-semibold text-white">Sign in</span>
           </Link>

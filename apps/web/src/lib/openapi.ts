@@ -1,6 +1,7 @@
 import type { OpenAPIV3_1 } from 'openapi-types';
 
-export const openApiSpec: OpenAPIV3_1.Document = {
+// Uses OpenAPI 3.0-style `nullable` for broader tooling compatibility
+export const openApiSpec = {
   openapi: '3.1.0',
   info: {
     title: 'OnlySnow API',

@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq, sql } from 'drizzle-orm';
 import { chaseRegions, resorts, forecasts } from '@onlysnow/db';
 import type { RegionSummary } from '@onlysnow/types';
@@ -8,7 +9,7 @@ import { getRedis } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export const GET = withLogging(async function GET() {
   const redis = getRedis();
   const cacheKey = 'onlysnow:regions:all';
 
@@ -75,4 +76,4 @@ export async function GET() {
   return NextResponse.json(result, {
     headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600' },
   });
-}
+});

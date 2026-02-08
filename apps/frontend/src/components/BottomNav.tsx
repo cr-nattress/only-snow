@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { log } from "@/lib/log";
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: "🏠", activeIcon: "🏠" },
@@ -13,51 +14,36 @@ const navItems = [
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // Check if we're on the landing page
-  const isLandingPage = pathname === "/";
-
-  // Hide nav during onboarding
-  if (pathname === "/onboarding") return null;
+  // Only show nav on app pages (not landing, onboarding, or auth)
+  const appPages = ["/dashboard", "/chase", "/notifications", "/settings"];
+  const isAppPage = appPages.some(p => pathname === p || pathname.startsWith(p + "/")) || pathname.startsWith("/resort/");
+  if (!isAppPage) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
-      {/* Blur backdrop - enhanced for landing page */}
-      <div className={`absolute inset-0 backdrop-blur-lg border-t ${
-        isLandingPage
-          ? "bg-white/60 dark:bg-slate-900/60 border-white/20 dark:border-slate-700/20"
-          : "bg-white/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-800"
-      }`} />
+      <div className="absolute inset-0 backdrop-blur-lg border-t bg-white/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-800" />
 
-      {/* Nav content */}
       <div className="relative mx-auto max-w-md md:max-w-2xl">
         <div className="flex items-center justify-around px-2 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
           {navItems.map((item) => {
-            const isActive = pathname === item.href ||
-              (item.href === "/dashboard" && pathname === "/");
+            const isActive = pathname === item.href;
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => log("nav.tab_click", { tab: item.label })}
                 className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-all btn-press ${
                   isActive
-                    ? isLandingPage
-                      ? "text-white"
-                      : "text-blue-600 dark:text-blue-400"
-                    : isLandingPage
-                      ? "text-blue-100 dark:text-slate-400 hover:text-white dark:hover:text-white"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
                 <span className={`text-xl transition-transform ${isActive ? "scale-110" : ""}`}>
                   {isActive ? item.activeIcon : item.icon}
                 </span>
                 <span className={`text-[10px] font-semibold ${
-                  isActive
-                    ? isLandingPage
-                      ? "text-white"
-                      : "text-blue-600 dark:text-blue-400"
-                    : ""
+                  isActive ? "text-blue-600 dark:text-blue-400" : ""
                 }`}>
                   {item.label}
                 </span>

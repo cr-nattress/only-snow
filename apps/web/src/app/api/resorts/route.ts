@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq, sql } from 'drizzle-orm';
 import { resorts, resortConditions } from '@onlysnow/db';
 import type { ResortSummary, Freshness } from '@onlysnow/types';
@@ -6,7 +7,7 @@ import { getDb } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export const GET = withLogging(async function GET(request: NextRequest) {
   const db = getDb();
   const params = request.nextUrl.searchParams;
 
@@ -97,4 +98,4 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(results, {
     headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600' },
   });
-}
+});

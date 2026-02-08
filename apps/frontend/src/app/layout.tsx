@@ -3,6 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
+import PageViewTracker from "@/components/PageViewTracker";
 
 export const metadata: Metadata = {
   title: "OnlySnow",
@@ -27,6 +28,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-blue-400 dark:bg-slate-900 antialiased transition-colors duration-300">
         <Providers>
+          <PageViewTracker />
           <div className="mx-auto max-w-md md:max-w-2xl lg:max-w-5xl">
             <Header />
             <main className="page-transition pb-20 lg:pb-0">

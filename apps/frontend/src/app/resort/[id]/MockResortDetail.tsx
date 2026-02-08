@@ -4,6 +4,7 @@ import Link from "next/link";
 import { vailDetail, vailForecast } from "@/data/scenarios";
 import { resorts } from "@/data/resorts";
 import { DailyForecast } from "@/data/types";
+import { log } from "@/lib/log";
 
 function ForecastBar({ day, maxSnow }: { day: DailyForecast; maxSnow: number }) {
   const height = maxSnow > 0 ? Math.max((day.snowfall / maxSnow) * 64, day.snowfall > 0 ? 8 : 0) : 0;
@@ -55,7 +56,7 @@ export default function MockResortDetail({ id }: { id: string }) {
       {/* Header */}
       <div className="px-4 md:px-6 lg:px-8 py-3">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="text-white/70 hover:text-white">
+          <Link href="/dashboard" className="text-white/70 hover:text-white" onClick={() => log("resort.back_click")}>
             &larr;
           </Link>
           <div className="flex-1">

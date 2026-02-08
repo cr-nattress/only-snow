@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { chaseRegions, tellurideTripPlan } from "@/data/scenarios";
 import { StormSeverity } from "@/data/types";
+import { log } from "@/lib/log";
 
 const severityConfig: Partial<Record<StormSeverity, { bg: string; border: string; text: string; label: string; icon: string }>> = {
   quiet: { bg: "bg-gray-50 dark:bg-slate-700", border: "border-gray-200 dark:border-slate-600", text: "text-gray-500 dark:text-slate-400", label: "QUIET", icon: "" },
@@ -34,6 +35,7 @@ export default function MockChasePage() {
           ) : (
             <button
               onClick={() => {
+                log("chase.back_click", { from: view });
                 if (view === "trip") setView("region");
                 else setView("national");
               }}
@@ -75,6 +77,7 @@ export default function MockChasePage() {
                 <button
                   key={r.id}
                   onClick={() => {
+                    log("chase.region_select", { regionId: String(r.id) });
                     setSelectedRegion(r.id);
                     setView("region");
                   }}
@@ -115,7 +118,7 @@ export default function MockChasePage() {
               Southern Colorado, Feb 10-13. This is chase-worthy from the East Coast.
             </p>
             <button
-              onClick={() => setView("trip")}
+              onClick={() => { log("chase.alert_cta_click"); setView("trip"); }}
               className="mt-2 text-xs lg:text-sm font-semibold text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-red-100"
             >
               See flight + logistics breakdown →
@@ -206,7 +209,7 @@ export default function MockChasePage() {
 
           {/* CTA to trip plan */}
           <button
-            onClick={() => setView("trip")}
+            onClick={() => { log("chase.build_trip_click"); setView("trip"); }}
             className="w-full py-3 bg-red-600 text-white text-sm lg:text-base font-semibold rounded-xl hover:bg-red-700 transition-colors"
           >
             ✈️ Build chase trip to Telluride →

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, Marker, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Tooltip, useMap, Circle } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -12,6 +12,13 @@ export interface MapResort {
   lng: number;
   snowfallTotal: number;
   snowfallDisplay: string;
+}
+
+export interface UserLocation {
+  location: string; // City name
+  lat: number;
+  lng: number;
+  driveRadiusMiles: number; // Calculated from driveRadius minutes
 }
 
 function getMarkerColor(inches: number): { bg: string; text: string } {
@@ -41,14 +48,54 @@ function createSnowIcon(snowfallTotal: number, snowfallDisplay: string) {
   });
 }
 
-function FitBounds({ resorts }: { resorts: MapResort[] }) {
+function createUserIcon() {
+  return L.divIcon({
+    className: "",
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    html: `<div style="
+      width:24px;height:24px;border-radius:50%;
+      background:#ef4444;color:#fff;
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px;font-weight:700;
+      border:3px solid rgba(255,255,255,0.9);
+      box-shadow:0 2px 6px rgba(0,0,0,0.4);
+    ">📍</div>`,
+  });
+}
+
+function FitBounds({ resorts, userLocation }: { resorts: MapResort[]; userLocation?: UserLocation }) {
   const map = useMap();
 
   useEffect(() => {
-    if (resorts.length === 0) return;
-    const bounds = L.latLngBounds(resorts.map((r) => [r.lat, r.lng]));
-    map.fitBounds(bounds, { padding: [30, 30], maxZoom: 10 });
-  }, [map, resorts]);
+    if (resorts.length === 0 && !userLocation) return;
+
+    // Build bounds including resorts and user location
+    const points: [number, number][] = [];
+
+    // Add resort locations
+    resorts.forEach((r) => points.push([r.lat, r.lng]));
+
+    // Add user location if provided
+    if (userLocation) {
+      points.push([userLocation.lat, userLocation.lng]);
+
+      // Add points around the circle to ensure the full drive radius is visible
+      // 1 mile ≈ 1609.34 meters
+      const radiusMeters = userLocation.driveRadiusMiles * 1609.34;
+      const radiusDegrees = (radiusMeters / 111320); // Rough conversion to degrees
+
+      points.push([userLocation.lat + radiusDegrees, userLocation.lng]);
+      points.push([userLocation.lat - radiusDegrees, userLocation.lng]);
+      points.push([userLocation.lat, userLocation.lng + radiusDegrees]);
+      points.push([userLocation.lat, userLocation.lng - radiusDegrees]);
+    }
+
+    if (points.length === 0) return;
+
+    const bounds = L.latLngBounds(points);
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 9 });
+  }, [map, resorts, userLocation]);
 
   return null;
 }
@@ -68,7 +115,13 @@ function useDarkMode() {
   return isDark;
 }
 
-export default function ResortMap({ resorts }: { resorts: MapResort[] }) {
+export default function ResortMap({
+  resorts,
+  userLocation
+}: {
+  resorts: MapResort[];
+  userLocation?: UserLocation;
+}) {
   const isDark = useDarkMode();
 
   const markers = useMemo(
@@ -80,12 +133,17 @@ export default function ResortMap({ resorts }: { resorts: MapResort[] }) {
     [resorts],
   );
 
-  if (resorts.length === 0) return null;
+  if (resorts.length === 0 && !userLocation) return null;
 
-  const center: [number, number] = [
-    resorts.reduce((s, r) => s + r.lat, 0) / resorts.length,
-    resorts.reduce((s, r) => s + r.lng, 0) / resorts.length,
-  ];
+  // Center on user location if available, otherwise average of resorts
+  const center: [number, number] = userLocation
+    ? [userLocation.lat, userLocation.lng]
+    : resorts.length > 0
+    ? [
+        resorts.reduce((s, r) => s + r.lat, 0) / resorts.length,
+        resorts.reduce((s, r) => s + r.lng, 0) / resorts.length,
+      ]
+    : [39.5, -106]; // Default to Colorado if no data
 
   // Use different tile layers for light/dark mode
   // OpenTopoMap for light mode (green terrain), Carto dark for dark mode
@@ -108,7 +166,36 @@ export default function ResortMap({ resorts }: { resorts: MapResort[] }) {
           url={tileUrl}
           subdomains={["a", "b", "c"]}
         />
-        <FitBounds resorts={resorts} />
+        <FitBounds resorts={resorts} userLocation={userLocation} />
+
+        {/* User location marker and drive radius circle */}
+        {userLocation && (
+          <>
+            <Circle
+              center={[userLocation.lat, userLocation.lng]}
+              radius={userLocation.driveRadiusMiles * 1609.34} // Convert miles to meters
+              pathOptions={{
+                color: isDark ? "#3b82f6" : "#2563eb",
+                fillColor: isDark ? "#3b82f6" : "#2563eb",
+                fillOpacity: 0.08,
+                weight: 2,
+                opacity: 0.4,
+              }}
+            />
+            <Marker
+              position={[userLocation.lat, userLocation.lng]}
+              icon={createUserIcon()}
+            >
+              <Tooltip direction="top" offset={[0, -12]} permanent={false}>
+                <span className="font-semibold">{userLocation.location}</span>
+                <br />
+                {userLocation.driveRadiusMiles} mile radius
+              </Tooltip>
+            </Marker>
+          </>
+        )}
+
+        {/* Resort markers */}
         {markers.map((r) => (
           <Marker key={r.id} position={[r.lat, r.lng]} icon={r.icon}>
             <Tooltip direction="top" offset={[0, -18]}>

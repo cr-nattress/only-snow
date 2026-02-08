@@ -7,6 +7,7 @@ import { useSession, signOut } from "next-auth/react";
 import { usePersona } from "@/context/PersonaContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import { getPersonaInfo, personasV2, getPersonaInfoV2, newToLegacyPersona } from "@/data/personas";
+import { log } from "@/lib/log";
 
 const passes = [
   { id: "epic", label: "Epic", color: "bg-indigo-600" },
@@ -163,7 +164,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={() => { log("settings.sign_out"); signOut({ callbackUrl: "/" }); }}
                   className="w-full py-2.5 px-4 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                 >
                   Sign out
@@ -201,8 +202,8 @@ export default function SettingsPage() {
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    onBlur={() => { setEditingLocation(false); updatePreferences({ location }); flashSaved(); }}
-                    onKeyDown={(e) => { if (e.key === "Enter") { setEditingLocation(false); updatePreferences({ location }); flashSaved(); } }}
+                    onBlur={() => { log("settings.location_save"); setEditingLocation(false); updatePreferences({ location }); flashSaved(); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { log("settings.location_save"); setEditingLocation(false); updatePreferences({ location }); flashSaved(); } }}
                     className="mt-1 text-xs lg:text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded px-2 py-1 w-40"
                     autoFocus
                   />
@@ -211,7 +212,7 @@ export default function SettingsPage() {
                 )}
               </div>
               <button
-                onClick={() => setEditingLocation(!editingLocation)}
+                onClick={() => { log("settings.location_edit"); setEditingLocation(!editingLocation); }}
                 className="text-xs lg:text-sm text-blue-600 font-medium"
               >
                 {editingLocation ? "Done" : "Edit"}
@@ -230,7 +231,7 @@ export default function SettingsPage() {
               </div>
               <select
                 value={driveRadius}
-                onChange={(e) => { const v = Number(e.target.value); setDriveRadius(v); updatePreferences({ driveRadius: v }); flashSaved(); }}
+                onChange={(e) => { const v = Number(e.target.value); log("settings.radius_change", { radius: String(v) }); setDriveRadius(v); updatePreferences({ driveRadius: v }); flashSaved(); }}
                 className="text-xs lg:text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded px-2 py-1"
               >
                 <option value={60}>1 hour</option>
@@ -251,6 +252,7 @@ export default function SettingsPage() {
                       <button
                         key={p.id}
                         onClick={() => {
+                          log("settings.pass_select", { passType: p.id });
                           setPass(p.id);
                           setEditingPass(false);
                           updatePreferences({ passType: p.id });
@@ -305,6 +307,7 @@ export default function SettingsPage() {
                       <button
                         key={p.id}
                         onClick={() => {
+                          log("settings.persona_select", { persona: p.id });
                           // Update userPersona if it exists, otherwise create a minimal one
                           const updated = userPersona
                             ? { ...userPersona, primary: p.id, confidence: 1.0 }
@@ -397,7 +400,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <button
-                  onClick={() => removeResort(resort.id)}
+                  onClick={() => { log("settings.resort_remove", { resortId: String(resort.id) }); removeResort(resort.id); }}
                   className="text-gray-400 dark:text-slate-500 hover:text-red-500 transition-colors"
                 >
                   ✕
@@ -412,7 +415,7 @@ export default function SettingsPage() {
           <div className="px-4 md:px-5 lg:px-6 py-2.5 lg:py-3 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
             <h2 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-slate-400">CHASE MODE</h2>
             <button
-              onClick={() => setChaseEnabled(!chaseEnabled)}
+              onClick={() => { log("settings.chase_toggle", { enabled: String(!chaseEnabled) }); setChaseEnabled(!chaseEnabled); }}
               className={`w-10 h-6 rounded-full transition-colors ${
                 chaseEnabled ? "bg-blue-500" : "bg-gray-300"
               } relative`}
@@ -436,7 +439,7 @@ export default function SettingsPage() {
                   ].map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => { setChaseWillingness(opt.value); updatePreferences({ chaseWillingness: opt.value }); flashSaved(); }}
+                      onClick={() => { log("settings.chase_willingness", { value: opt.value }); setChaseWillingness(opt.value); updatePreferences({ chaseWillingness: opt.value }); flashSaved(); }}
                       className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
                         chaseWillingness === opt.value
                           ? "border-blue-500 bg-blue-50"
@@ -489,7 +492,7 @@ export default function SettingsPage() {
                     <div className="text-[10px] lg:text-xs text-gray-500 dark:text-slate-400">{notif.description}</div>
                   </div>
                   <button
-                    onClick={() => toggleNotification(notif.id)}
+                    onClick={() => { log("settings.notification_toggle", { notifId: notif.id, enabled: String(!notifications[notif.id]) }); toggleNotification(notif.id); }}
                     className={`w-10 h-6 rounded-full transition-colors ${
                       notifications[notif.id] ? "bg-blue-500" : "bg-gray-300"
                     } relative`}

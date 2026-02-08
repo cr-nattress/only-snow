@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq, sql } from 'drizzle-orm';
 import { chaseRegions, resorts, forecasts } from '@onlysnow/db';
 import type { ChaseAlert } from '@onlysnow/types';
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 const CHASE_THRESHOLD_INCHES = 6;
 
-export async function GET() {
+export const GET = withLogging(async function GET() {
   const redis = getRedis();
   const cacheKey = CacheKeys.chaseAlerts();
 
@@ -112,4 +113,4 @@ export async function GET() {
   return NextResponse.json(result, {
     headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=300' },
   });
-}
+});

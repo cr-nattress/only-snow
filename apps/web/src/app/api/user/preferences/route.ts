@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq } from 'drizzle-orm';
 import { users } from '@onlysnow/db';
 import type { UserPreferences } from '@onlysnow/types';
@@ -23,7 +24,7 @@ function getUserId(request: NextRequest): string | null {
   }
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withLogging(async function GET(request: NextRequest) {
   const userId = getUserId(request);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -46,9 +47,9 @@ export async function GET(request: NextRequest) {
   };
 
   return NextResponse.json(prefs);
-}
+});
 
-export async function PUT(request: NextRequest) {
+export const PUT = withLogging(async function PUT(request: NextRequest) {
   const userId = getUserId(request);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -85,4 +86,4 @@ export async function PUT(request: NextRequest) {
   };
 
   return NextResponse.json(prefs);
-}
+});

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { StormTrackerState, StormSeverity } from "@/data/types";
+import { log } from "@/lib/log";
 
 interface StormTrackerProps {
   storm: StormTrackerState;
@@ -91,7 +92,7 @@ export default function StormTracker({ storm }: StormTrackerProps) {
   );
 
   if (isActive) {
-    return <Link href="/chase">{content}</Link>;
+    return <Link href="/chase" onClick={() => log("nav.storm_tracker_click")}>{content}</Link>;
   }
 
   return content;

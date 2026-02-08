@@ -10,21 +10,42 @@ import AiAnalysis from "@/components/ExpertTake";
 import PromptInput from "@/components/ScenarioSwitcher";
 import TimeToggle from "@/components/TimeToggle";
 import { usePreferences } from "@/context/PreferencesContext";
-import type { MapResort } from "@/components/ResortMap";
+import type { MapResort, UserLocation } from "@/components/ResortMap";
+import { geocodeLocation, driveMinutesToMiles } from "@/lib/geocode";
 
 const ResortMap = dynamic(() => import("@/components/ResortMap"), { ssr: false });
 
 export default function MockDashboard() {
   const router = useRouter();
-  const { loaded, hasPreferences } = usePreferences();
+  const { loaded, hasPreferences, preferences } = usePreferences();
   const [activeScenarioId, setActiveScenarioId] = useState(scenarios[0].id);
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("5day");
+  const [userLocation, setUserLocation] = useState<UserLocation | undefined>();
 
   useEffect(() => {
     if (loaded && !hasPreferences) {
       router.replace("/onboarding");
     }
   }, [loaded, hasPreferences, router]);
+
+  // Geocode user location on mount
+  useEffect(() => {
+    async function loadUserLocation() {
+      if (!preferences.location) return;
+
+      const coords = await geocodeLocation(preferences.location);
+      if (!coords) return;
+
+      setUserLocation({
+        location: preferences.location,
+        lat: coords.lat,
+        lng: coords.lng,
+        driveRadiusMiles: driveMinutesToMiles(preferences.driveRadius),
+      });
+    }
+
+    loadUserLocation();
+  }, [preferences.location, preferences.driveRadius]);
 
   const scenario = scenarios.find((s) => s.id === activeScenarioId) || scenarios[0];
 
@@ -85,7 +106,7 @@ export default function MockDashboard() {
       </div>
 
       {/* Resort Map */}
-      <ResortMap resorts={mapResorts} />
+      <ResortMap resorts={mapResorts} userLocation={userLocation} />
 
       {/* Main content */}
       <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4 space-y-3 lg:space-y-4">

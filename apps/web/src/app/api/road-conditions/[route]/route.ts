@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { CacheKeys, CacheTTL, cache } from '@onlysnow/redis';
 import { getRedis } from '@/lib/redis';
 
@@ -11,7 +12,7 @@ interface RoadCondition {
   updatedAt: string;
 }
 
-export async function GET(
+export const GET = withLogging(async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ route: string }> },
 ) {
@@ -41,4 +42,4 @@ export async function GET(
   return NextResponse.json(result, {
     headers: { 'Cache-Control': 'public, s-maxage=60' },
   });
-}
+});

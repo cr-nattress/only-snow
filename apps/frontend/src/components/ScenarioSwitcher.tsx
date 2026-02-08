@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Scenario } from "@/data/types";
+import { log } from "@/lib/log";
 
 interface PromptInputProps {
   scenarios: Scenario[];
@@ -27,6 +28,7 @@ export default function PromptInput({ scenarios, activeId, onChange }: PromptInp
 
   const handleSubmit = () => {
     if (!query.trim()) return;
+    log("dashboard.scenario_search", { query });
     const match = matchScenario(query, scenarios);
     if (match) {
       onChange(match);

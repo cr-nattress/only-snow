@@ -1,9 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { DashboardData } from "@/lib/data-provider";
+import type { UserLocation } from "@/components/ResortMap";
 import ResortTable from "@/components/ResortTable";
 import AiAnalysis from "@/components/ExpertTake";
+import { usePreferences } from "@/context/PreferencesContext";
+import { geocodeLocation, driveMinutesToMiles } from "@/lib/geocode";
 
 const ResortMap = dynamic(() => import("@/components/ResortMap"), { ssr: false });
 
@@ -12,10 +16,32 @@ interface ApiDashboardProps {
 }
 
 export default function ApiDashboard({ data }: ApiDashboardProps) {
+  const { preferences } = usePreferences();
+  const [userLocation, setUserLocation] = useState<UserLocation | undefined>();
+
+  // Geocode user location on mount
+  useEffect(() => {
+    async function loadUserLocation() {
+      if (!preferences.location) return;
+
+      const coords = await geocodeLocation(preferences.location);
+      if (!coords) return;
+
+      setUserLocation({
+        location: preferences.location,
+        lat: coords.lat,
+        lng: coords.lng,
+        driveRadiusMiles: driveMinutesToMiles(preferences.driveRadius),
+      });
+    }
+
+    loadUserLocation();
+  }, [preferences.location, preferences.driveRadius]);
+
   return (
     <div className="min-h-screen">
       {/* Resort Map */}
-      <ResortMap resorts={data.mapResorts} />
+      <ResortMap resorts={data.mapResorts} userLocation={userLocation} />
 
       {/* Main content */}
       <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4 space-y-3 lg:space-y-4">

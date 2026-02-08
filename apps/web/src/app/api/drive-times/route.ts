@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq, sql } from 'drizzle-orm';
 import { resorts, driveTimes } from '@onlysnow/db';
 import type { DriveTime } from '@onlysnow/types';
@@ -14,7 +15,7 @@ export const dynamic = 'force-dynamic';
  * Returns drive times from the nearest pre-computed origin city to all resorts.
  * Optionally filter by resortId: /api/drive-times?lat=...&lng=...&resortId=123
  */
-export async function GET(request: NextRequest) {
+export const GET = withLogging(async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const lat = parseFloat(params.get('lat') ?? '');
   const lng = parseFloat(params.get('lng') ?? '');
@@ -79,4 +80,4 @@ export async function GET(request: NextRequest) {
     { originCity, driveTimes: result },
     { headers: { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600' } },
   );
-}
+});

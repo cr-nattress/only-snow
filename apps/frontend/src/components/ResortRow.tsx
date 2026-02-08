@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ResortConditions, TimeWindow } from "@/data/types";
 import { useResortRow } from "@/hooks/useResortRow";
+import { log } from "@/lib/log";
 
 interface ResortRowProps {
   data: ResortConditions;
@@ -16,7 +17,7 @@ export default function ResortRow({ data, rank, userPass, timeWindow, dailyLabel
   const row = useResortRow(data, userPass, timeWindow);
 
   return (
-    <Link href={`/resort/${row.resortId}`} className="block">
+    <Link href={`/resort/${row.resortId}`} className="block" onClick={() => log("dashboard.resort_click", { resortSlug: data.resort.id })}>
       <div
         className={`resort-row px-4 md:px-5 lg:px-6 py-3 lg:py-3.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 active:bg-gray-100 dark:active:bg-gray-800 transition-colors animate-fade-slide-in animate-delay-${Math.min(rank, 5)}`}
         style={{ animationDelay: `${rank * 50}ms` }}

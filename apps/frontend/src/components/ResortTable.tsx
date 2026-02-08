@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ResortConditions, TimeWindow, WorthKnowingEntry, StormTrackerState, StormSeverity } from "@/data/types";
 import ResortRow from "./ResortRow";
+import { log } from "@/lib/log";
 
 const severityStyles: Partial<Record<StormSeverity, { bg: string; border: string; text: string }>> = {
   quiet: {
@@ -98,7 +99,7 @@ export default function ResortTable({
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transition-colors">
       {/* Storm banner */}
       {isActive ? (
-        <Link href="/chase" className="block hover:opacity-90 transition-opacity">
+        <Link href="/chase" className="block hover:opacity-90 transition-opacity" onClick={() => log("nav.storm_banner_click")}>
           {stormBanner}
         </Link>
       ) : (

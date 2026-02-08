@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq, sql } from 'drizzle-orm';
 import { resorts, resortConditions } from '@onlysnow/db';
 import type { OnboardingRecommendationResponse } from '@onlysnow/types';
@@ -48,7 +49,7 @@ function passMatches(resortPass: string | null, userPass: string): boolean {
   return resortPass === userPass || resortPass === 'independent';
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withLogging(async function POST(request: NextRequest) {
   try {
     const body: RequestBody = await request.json();
     const { location, passType, driveRadius, persona, experience, frequency, groupType, triggers } = body;
@@ -260,4 +261,4 @@ Guidelines:
       { status: 500 },
     );
   }
-}
+});

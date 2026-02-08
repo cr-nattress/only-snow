@@ -16,6 +16,7 @@ import {
 } from "@/data/types";
 import type { OnboardingRecommendationResponse } from "@onlysnow/types";
 import { classifyPersona, getClassificationReason } from "@/lib/personaClassifier";
+import { log } from "@/lib/log";
 
 type Step =
   | "location"
@@ -185,6 +186,7 @@ export default function OnboardingPage() {
 
   function selectPersonaOverride(personaType: PersonaType) {
     if (!detectedPersona) return;
+    log("onboarding.persona_override", { persona: personaType });
 
     const updatedPersona: UserPersona = {
       ...detectedPersona,
@@ -196,6 +198,7 @@ export default function OnboardingPage() {
   }
 
   function next() {
+    log("onboarding.step_next", { step });
     const currentIndex = stepOrder.indexOf(step);
     const nextStep = stepOrder[currentIndex + 1];
 
@@ -250,6 +253,7 @@ export default function OnboardingPage() {
   }
 
   function back() {
+    log("onboarding.step_back", { step });
     const currentIndex = stepOrder.indexOf(step);
     if (currentIndex > 0) {
       // Special handling for skipped steps
@@ -298,7 +302,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
+    <div className="h-screen overflow-hidden bg-white dark:bg-slate-900 flex flex-col">
       {/* Progress bar */}
       <div className="h-1 bg-gray-100 dark:bg-slate-800">
         <div
@@ -318,7 +322,7 @@ export default function OnboardingPage() {
       )}
 
       {/* Content */}
-      <div className="flex-1 flex flex-col justify-center px-6 md:px-8 lg:px-10 py-8 max-w-lg lg:max-w-xl mx-auto w-full">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-center px-6 md:px-8 lg:px-10 py-8 max-w-lg lg:max-w-xl mx-auto w-full">
         {/* Step 1: Location */}
         {step === "location" && (
           <div className="space-y-6">
@@ -340,7 +344,7 @@ export default function OnboardingPage() {
               {["Denver, CO", "Avon, CO", "Salt Lake City, UT", "Scranton, PA"].map((city) => (
                 <button
                   key={city}
-                  onClick={() => setLocation(city)}
+                  onClick={() => { log("onboarding.location_select", { location: city }); setLocation(city); }}
                   className={`text-xs lg:text-sm px-3 py-1.5 rounded-full border transition-colors ${
                     location === city
                       ? "bg-blue-50 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300"
@@ -367,7 +371,7 @@ export default function OnboardingPage() {
               {passes.map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => setPass(p.id)}
+                  onClick={() => { log("onboarding.pass_select", { passType: p.id }); setPass(p.id); }}
                   className={`flex items-center gap-3 px-4 py-4 rounded-xl border-2 transition-all ${
                     pass === p.id
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm"
@@ -397,7 +401,7 @@ export default function OnboardingPage() {
               {radiusOptions.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => setRadius(opt.value)}
+                  onClick={() => { log("onboarding.radius_select", { radius: String(opt.value) }); setRadius(opt.value); }}
                   className={`w-full flex items-center justify-between px-5 py-4 rounded-xl border-2 transition-all ${
                     radius === opt.value
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
@@ -429,7 +433,7 @@ export default function OnboardingPage() {
               {frequencyOptions.map((opt, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setFrequency(opt.value)}
+                  onClick={() => { log("onboarding.frequency_select", { frequency: opt.value }); setFrequency(opt.value); }}
                   className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${
                     frequency === opt.value && (opt.days !== 30 || frequencyOptions.findIndex((o) => o.value === frequency) === idx)
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
@@ -457,7 +461,7 @@ export default function OnboardingPage() {
               {groupOptions.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => setGroup(opt.value)}
+                  onClick={() => { log("onboarding.group_select", { groupType: opt.value }); setGroup(opt.value); }}
                   className={`text-left px-4 py-4 rounded-xl border-2 transition-all ${
                     group === opt.value
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
@@ -488,7 +492,7 @@ export default function OnboardingPage() {
               {childAgeOptions.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => toggleChildAge(opt.value)}
+                  onClick={() => { log("onboarding.child_age_toggle", { age: String(opt.value) }); toggleChildAge(opt.value); }}
                   className={`text-left px-4 py-4 rounded-xl border-2 transition-all ${
                     childAges.includes(opt.value)
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
@@ -516,7 +520,7 @@ export default function OnboardingPage() {
               {chaseOptions.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => setChase(opt.value)}
+                  onClick={() => { log("onboarding.chase_select", { value: opt.value }); setChase(opt.value); }}
                   className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${
                     chase === opt.value
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
@@ -544,7 +548,7 @@ export default function OnboardingPage() {
               {triggerOptions.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => toggleTrigger(opt.value)}
+                  onClick={() => { log("onboarding.trigger_toggle", { trigger: opt.value }); toggleTrigger(opt.value); }}
                   className={`text-left px-4 py-4 rounded-xl border-2 transition-all ${
                     triggers.includes(opt.value)
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
@@ -575,7 +579,7 @@ export default function OnboardingPage() {
               {experienceOptions.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => setExperience(opt.value)}
+                  onClick={() => { log("onboarding.experience_select", { level: opt.value }); setExperience(opt.value); }}
                   className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${
                     experience === opt.value
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
@@ -747,8 +751,8 @@ export default function OnboardingPage() {
         )}
       </div>
 
-      {/* Bottom CTA - sticky to stay visible */}
-      <div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 px-6 md:px-8 lg:px-10 py-4 mt-auto">
+      {/* Bottom CTA */}
+      <div className="shrink-0 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 px-6 md:px-8 lg:px-10 py-4">
         <div className="max-w-lg lg:max-w-xl mx-auto w-full">
           {step === "personaConfirm" && !showPersonaOverride ? (
             <button

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq, gte, sql } from 'drizzle-orm';
 import {
   resorts,
@@ -15,7 +16,7 @@ import { getRedis } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
+export const GET = withLogging(async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -168,4 +169,4 @@ export async function GET(
   );
 
   return NextResponse.json(result);
-}
+});

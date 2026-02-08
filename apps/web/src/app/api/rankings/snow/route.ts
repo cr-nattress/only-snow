@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withLogging } from '@/lib/api-logger';
 import { eq, sql } from 'drizzle-orm';
 import { resorts, resortConditions, forecasts } from '@onlysnow/db';
 import type { SnowRanking, ResortSummary, Freshness } from '@onlysnow/types';
@@ -8,7 +9,7 @@ import { getRedis } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export const GET = withLogging(async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const timeframe = (params.get('timeframe') ?? '48h') as '24h' | '48h' | '72h' | '7d';
   const region = params.get('region') ?? undefined;
@@ -95,7 +96,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(result, {
     headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600' },
   });
-}
+});
 
 function mapResortSummary(
   resort: typeof resorts.$inferSelect,
