@@ -88,7 +88,7 @@
     "slug": "laurel-highlands",
     "bestAirport": "PIT",
     "lat": 40.02,
-    "lng": -79.30
+    "lng": -79.3
   },
   {
     "name": "Northern Vermont",
@@ -101,15 +101,15 @@
     "name": "Central Vermont",
     "slug": "central-vermont",
     "bestAirport": "BTV",
-    "lat": 43.60,
+    "lat": 43.6,
     "lng": -72.82
   },
   {
     "name": "Southern Vermont",
     "slug": "southern-vermont",
     "bestAirport": "ALB",
-    "lat": 43.00,
-    "lng": -72.80
+    "lat": 43.0,
+    "lng": -72.8
   },
   {
     "name": "Northeast Kingdom",
@@ -122,7 +122,7 @@
     "name": "White Mountains",
     "slug": "white-mountains",
     "bestAirport": "MHT",
-    "lat": 44.10,
+    "lat": 44.1,
     "lng": -71.45
   },
   {
@@ -144,7 +144,7 @@
     "slug": "southern-maine",
     "bestAirport": "PWM",
     "lat": 44.09,
-    "lng": -70.80
+    "lng": -70.8
   },
   {
     "name": "Northern Maine",
@@ -192,7 +192,7 @@
     "name": "Massachusetts",
     "slug": "massachusetts",
     "bestAirport": "ALB",
-    "lat": 42.50,
+    "lat": 42.5,
     "lng": -73.17
   },
   {
@@ -304,7 +304,7 @@
     "name": "Lake Tahoe",
     "slug": "lake-tahoe",
     "bestAirport": "RNO",
-    "lat": 39.20,
+    "lat": 39.2,
     "lng": -120.24
   },
   {
@@ -319,14 +319,14 @@
     "slug": "southern-california",
     "bestAirport": "ONT",
     "lat": 34.24,
-    "lng": -116.90
+    "lng": -116.9
   },
   {
     "name": "Nevada",
     "slug": "nevada",
     "bestAirport": "RNO",
     "lat": 39.32,
-    "lng": -119.90
+    "lng": -119.9
   },
   {
     "name": "Alaska",
@@ -339,7 +339,7 @@
     "name": "Arizona",
     "slug": "arizona",
     "bestAirport": "FLG",
-    "lat": 35.20,
+    "lat": 35.2,
     "lng": -111.65
   },
   {
@@ -354,20 +354,27 @@
     "slug": "boise-area",
     "bestAirport": "BOI",
     "lat": 43.76,
-    "lng": -116.10
+    "lng": -116.1
   },
   {
     "name": "McCall Area",
     "slug": "mccall-area",
     "bestAirport": "BOI",
     "lat": 44.73,
-    "lng": -116.10
+    "lng": -116.1
   },
   {
     "name": "Sun Valley Area",
     "slug": "sun-valley-area",
     "bestAirport": "SUN",
-    "lat": 43.70,
+    "lat": 43.7,
     "lng": -114.35
+  },
+  {
+    "name": "Central PA",
+    "slug": "central-pa",
+    "bestAirport": "MDT",
+    "lat": 40.3,
+    "lng": -77.4
   }
 ]

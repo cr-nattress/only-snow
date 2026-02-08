@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import { createDb } from './client.js';
 import { chaseRegions } from './schema/chase-regions.js';
 import { resorts } from './schema/resorts.js';
@@ -67,6 +68,17 @@ async function seed() {
 
   console.log('Seeding chase regions...');
   const regionsData = loadJson<ChaseRegionSeed[]>('chase-regions.json');
+  const validNames = new Set(regionsData.map((r) => r.name));
+
+  // Remove stale chase regions not in the current seed data
+  const existingRegions = await db.select().from(chaseRegions);
+  for (const region of existingRegions) {
+    if (!validNames.has(region.name)) {
+      await db.delete(chaseRegions).where(eq(chaseRegions.id, region.id));
+      console.log(`  Removed stale chase region: ${region.name}`);
+    }
+  }
+
   const insertedRegions = await db
     .insert(chaseRegions)
     .values(
@@ -129,6 +141,7 @@ async function seed() {
       .onConflictDoUpdate({
         target: resorts.slug,
         set: {
+          chaseRegionId,
           totalLifts: r.totalLifts,
           totalTrails: r.totalTrails,
           terrainAcres: r.terrainAcres,
