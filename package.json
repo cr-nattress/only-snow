@@ -1,6 +1,7 @@
 {
   "name": "only-snow",
   "private": true,
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "turbo dev",
     "dev:web": "pnpm --filter web dev",
