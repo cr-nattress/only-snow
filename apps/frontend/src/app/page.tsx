@@ -70,7 +70,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md mt-4">
             <Link
               href={isAuthenticated ? "/dashboard" : "/onboarding"}
-              className="flex-1 group relative overflow-hidden rounded-xl bg-white hover:bg-blue-50 text-blue-600 dark:text-blue-700 px-6 py-3.5 text-base font-bold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-2xl btn-press"
+              className="group relative overflow-hidden rounded-xl bg-white hover:bg-blue-50 text-blue-600 dark:text-blue-700 px-6 py-3.5 text-base font-bold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-2xl btn-press"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
                 {isAuthenticated ? (
@@ -86,16 +86,6 @@ export default function Home() {
                 )}
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-200 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-            </Link>
-
-            <Link
-              href="/dashboard"
-              className="flex-1 group relative overflow-hidden rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border-2 border-white/30 px-6 py-3.5 text-base font-bold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-2xl btn-press"
-            >
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                <span>Explore Demo</span>
-                <span className="text-xl">👀</span>
-              </span>
             </Link>
           </div>
 

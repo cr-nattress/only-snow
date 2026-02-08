@@ -1,0 +1,158 @@
+name: Deploy Pipelines
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pipelines/**"
+      - "packages/db/**"
+      - "packages/redis/**"
+      - "packages/pipeline-core/**"
+
+concurrency:
+  group: deploy-pipelines
+  cancel-in-progress: false
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      forecast-refresh: ${{ steps.filter.outputs.forecast-refresh }}
+      conditions-refresh: ${{ steps.filter.outputs.conditions-refresh }}
+      snotel-daily: ${{ steps.filter.outputs.snotel-daily }}
+      avalanche-daily: ${{ steps.filter.outputs.avalanche-daily }}
+      road-conditions: ${{ steps.filter.outputs.road-conditions }}
+      drive-times: ${{ steps.filter.outputs.drive-times }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shared: &shared
+              - "packages/db/**"
+              - "packages/redis/**"
+              - "packages/pipeline-core/**"
+            forecast-refresh:
+              - *shared
+              - "pipelines/forecast-refresh/**"
+            conditions-refresh:
+              - *shared
+              - "pipelines/conditions-refresh/**"
+            snotel-daily:
+              - *shared
+              - "pipelines/snotel-daily/**"
+            avalanche-daily:
+              - *shared
+              - "pipelines/avalanche-daily/**"
+            road-conditions:
+              - *shared
+              - "pipelines/road-conditions/**"
+            drive-times:
+              - *shared
+              - "pipelines/drive-times/**"
+
+  deploy:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy forecast-refresh
+        if: needs.detect-changes.outputs.forecast-refresh == 'true'
+        run: |
+          pnpm --filter @onlysnow/pipeline-forecast-refresh bundle
+          gcloud functions deploy onlysnow-forecast-refresh \
+            --gen2 --region=us-central1 --runtime=nodejs20 \
+            --entry-point=forecastRefresh \
+            --source=pipelines/forecast-refresh/deploy \
+            --trigger-topic=onlysnow-forecast-refresh \
+            --memory=512Mi --timeout=540s --max-instances=1 \
+            --set-secrets="DATABASE_URL=DATABASE_URL:latest,UPSTASH_REDIS_REST_URL=UPSTASH_REDIS_REST_URL:latest,UPSTASH_REDIS_REST_TOKEN=UPSTASH_REDIS_REST_TOKEN:latest" \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy conditions-refresh
+        if: needs.detect-changes.outputs.conditions-refresh == 'true'
+        run: |
+          pnpm --filter @onlysnow/pipeline-conditions-refresh bundle
+          gcloud functions deploy onlysnow-conditions-refresh \
+            --gen2 --region=us-central1 --runtime=nodejs20 \
+            --entry-point=conditionsRefresh \
+            --source=pipelines/conditions-refresh/deploy \
+            --trigger-topic=onlysnow-conditions-refresh \
+            --memory=256Mi --timeout=300s --max-instances=1 \
+            --set-secrets="DATABASE_URL=DATABASE_URL:latest,UPSTASH_REDIS_REST_URL=UPSTASH_REDIS_REST_URL:latest,UPSTASH_REDIS_REST_TOKEN=UPSTASH_REDIS_REST_TOKEN:latest" \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy snotel-daily
+        if: needs.detect-changes.outputs.snotel-daily == 'true'
+        run: |
+          pnpm --filter @onlysnow/pipeline-snotel-daily bundle
+          gcloud functions deploy onlysnow-snotel-daily \
+            --gen2 --region=us-central1 --runtime=nodejs20 \
+            --entry-point=snotelDaily \
+            --source=pipelines/snotel-daily/deploy \
+            --trigger-topic=onlysnow-snotel-daily \
+            --memory=256Mi --timeout=300s --max-instances=1 \
+            --set-secrets="DATABASE_URL=DATABASE_URL:latest,UPSTASH_REDIS_REST_URL=UPSTASH_REDIS_REST_URL:latest,UPSTASH_REDIS_REST_TOKEN=UPSTASH_REDIS_REST_TOKEN:latest" \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy avalanche-daily
+        if: needs.detect-changes.outputs.avalanche-daily == 'true'
+        run: |
+          pnpm --filter @onlysnow/pipeline-avalanche-daily bundle
+          gcloud functions deploy onlysnow-avalanche-daily \
+            --gen2 --region=us-central1 --runtime=nodejs20 \
+            --entry-point=avalancheDaily \
+            --source=pipelines/avalanche-daily/deploy \
+            --trigger-topic=onlysnow-avalanche-daily \
+            --memory=256Mi --timeout=300s --max-instances=1 \
+            --set-secrets="DATABASE_URL=DATABASE_URL:latest" \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy road-conditions
+        if: needs.detect-changes.outputs.road-conditions == 'true'
+        run: |
+          pnpm --filter @onlysnow/pipeline-road-conditions bundle
+          gcloud functions deploy onlysnow-road-conditions \
+            --gen2 --region=us-central1 --runtime=nodejs20 \
+            --entry-point=roadConditions \
+            --source=pipelines/road-conditions/deploy \
+            --trigger-topic=onlysnow-road-conditions \
+            --memory=256Mi --timeout=120s --max-instances=1 \
+            --set-secrets="UPSTASH_REDIS_REST_URL=UPSTASH_REDIS_REST_URL:latest,UPSTASH_REDIS_REST_TOKEN=UPSTASH_REDIS_REST_TOKEN:latest" \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy drive-times
+        if: needs.detect-changes.outputs.drive-times == 'true'
+        run: |
+          pnpm --filter @onlysnow/pipeline-drive-times bundle
+          gcloud functions deploy onlysnow-drive-times \
+            --gen2 --region=us-central1 --runtime=nodejs20 \
+            --entry-point=driveTimesRefresh \
+            --source=pipelines/drive-times/deploy \
+            --trigger-topic=onlysnow-drive-times \
+            --memory=256Mi --timeout=540s --max-instances=1 \
+            --set-secrets="DATABASE_URL=DATABASE_URL:latest,UPSTASH_REDIS_REST_URL=UPSTASH_REDIS_REST_URL:latest,UPSTASH_REDIS_REST_TOKEN=UPSTASH_REDIS_REST_TOKEN:latest,GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY:latest" \
+            --project=${{ secrets.GCP_PROJECT_ID }}

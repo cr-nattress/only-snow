@@ -16,6 +16,9 @@ export default function BottomNav() {
   // Check if we're on the landing page
   const isLandingPage = pathname === "/";
 
+  // Hide nav during onboarding
+  if (pathname === "/onboarding") return null;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
       {/* Blur backdrop - enhanced for landing page */}

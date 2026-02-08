@@ -8,7 +8,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "bundle": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=deploy/index.js --format=esm --external:@google-cloud/functions-framework"
   },
   "dependencies": {
     "@google-cloud/functions-framework": "^3.4.5",
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@types/node": "^20",
     "tsx": "^4.19.2",
+    "esbuild": "^0.24.2",
     "typescript": "^5.7.3"
   }
 }

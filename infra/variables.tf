@@ -33,3 +33,9 @@ variable "anthropic_api_key" {
   sensitive   = true
   default     = ""
 }
+
+variable "google_maps_api_key" {
+  description = "Google Maps API key for drive time calculations"
+  type        = string
+  sensitive   = true
+}

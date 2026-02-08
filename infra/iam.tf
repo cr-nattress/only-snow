@@ -11,3 +11,17 @@ resource "google_project_iam_member" "scheduler_invoker" {
   role    = "roles/run.invoker"
   member  = "serviceAccount:${google_service_account.pipeline_sa.email}"
 }
+
+# Allow pipeline service account to access secrets in Secret Manager
+resource "google_secret_manager_secret_iam_member" "pipeline_secrets" {
+  for_each = toset([
+    "DATABASE_URL",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+    "GOOGLE_MAPS_API_KEY",
+  ])
+
+  secret_id = each.value
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.pipeline_sa.email}"
+}
