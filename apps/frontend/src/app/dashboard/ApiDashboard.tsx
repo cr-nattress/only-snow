@@ -41,7 +41,7 @@ export default function ApiDashboard({ data }: ApiDashboardProps) {
   return (
     <div className="min-h-screen">
       {/* Resort Map */}
-      <ResortMap resorts={data.mapResorts} userLocation={userLocation} />
+      <ResortMap resorts={data.mapResorts.slice(0, 5)} userLocation={userLocation} />
 
       {/* Main content */}
       <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4 space-y-3 lg:space-y-4">
@@ -57,9 +57,9 @@ export default function ApiDashboard({ data }: ApiDashboardProps) {
           </div>
         )}
 
-        {/* Resort table with storm tracker */}
+        {/* Resort table with storm tracker — show top 5 */}
         <ResortTable
-          resorts={data.resorts}
+          resorts={data.resorts.slice(0, 5)}
           storm={data.stormTracker}
           timeWindow="10day"
         />

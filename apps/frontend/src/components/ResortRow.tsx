@@ -24,21 +24,14 @@ export default function ResortRow({ data, rank, userPass, timeWindow, dailyLabel
       >
         {/* Resort summary row */}
         <div className="flex items-center gap-3">
-          {/* Weather icon */}
-          <div className={`w-8 h-8 lg:w-10 lg:h-10 shrink-0 rounded-full ${row.weather.bg} ring-2 ${row.weather.ring} flex items-center justify-center transition-transform hover:scale-105`}>
-            <span className="text-lg lg:text-xl leading-none">{row.weather.icon}</span>
-          </div>
-
           {/* Resort name + pass badge */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm lg:text-base truncate text-gray-900 dark:text-gray-100">{row.resortName}</span>
-              {row.onPass && (
-                <span className="text-[10px] lg:text-xs font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 shrink-0">
-                  {row.passType.toUpperCase()}
-                </span>
-              )}
-            </div>
+            <div className="font-bold text-sm lg:text-base truncate max-w-[8.5rem] text-gray-900 dark:text-gray-100">{row.resortName}</div>
+            {row.onPass && (
+              <span className="text-[10px] lg:text-xs font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300">
+                {row.passType.toUpperCase()}
+              </span>
+            )}
           </div>
 
           {/* Data columns — visible on all sizes */}

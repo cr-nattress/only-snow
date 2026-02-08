@@ -302,7 +302,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-white dark:bg-slate-900 flex flex-col">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-white dark:bg-slate-900 flex flex-col">
       {/* Progress bar */}
       <div className="h-1 bg-gray-100 dark:bg-slate-800">
         <div
@@ -322,10 +322,11 @@ export default function OnboardingPage() {
       )}
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col justify-center px-6 md:px-8 lg:px-10 py-8 max-w-lg lg:max-w-xl mx-auto w-full">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 md:px-8 lg:px-10 max-w-lg lg:max-w-xl mx-auto w-full">
+        <div className="min-h-full flex flex-col justify-center py-4">
         {/* Step 1: Location */}
         {step === "location" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Where do you live?</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
@@ -360,7 +361,7 @@ export default function OnboardingPage() {
 
         {/* Step 2: Pass */}
         {step === "pass" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">What pass do you have?</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
@@ -372,7 +373,7 @@ export default function OnboardingPage() {
                 <button
                   key={p.id}
                   onClick={() => { log("onboarding.pass_select", { passType: p.id }); setPass(p.id); }}
-                  className={`flex items-center gap-3 px-4 py-4 rounded-xl border-2 transition-all ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${
                     pass === p.id
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
@@ -390,19 +391,19 @@ export default function OnboardingPage() {
 
         {/* Step 3: Drive Radius */}
         {step === "radius" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">How far will you drive?</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
                 On a normal ski day, what&apos;s your max drive?
               </p>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {radiusOptions.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => { log("onboarding.radius_select", { radius: String(opt.value) }); setRadius(opt.value); }}
-                  className={`w-full flex items-center justify-between px-5 py-4 rounded-xl border-2 transition-all ${
+                  className={`w-full flex items-center justify-between px-5 py-3 rounded-xl border-2 transition-all ${
                     radius === opt.value
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
@@ -422,19 +423,19 @@ export default function OnboardingPage() {
 
         {/* Step 4: Frequency (NEW) */}
         {step === "frequency" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">How often do you ski?</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
                 How many days did you ski last season?
               </p>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {frequencyOptions.map((opt, idx) => (
                 <button
                   key={idx}
                   onClick={() => { log("onboarding.frequency_select", { frequency: opt.value }); setFrequency(opt.value); }}
-                  className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${
+                  className={`w-full text-left px-5 py-3 rounded-xl border-2 transition-all ${
                     frequency === opt.value && (opt.days !== 30 || frequencyOptions.findIndex((o) => o.value === frequency) === idx)
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
@@ -450,19 +451,19 @@ export default function OnboardingPage() {
 
         {/* Step 5: Group (NEW) */}
         {step === "group" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Who do you ski with?</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
                 We&apos;ll tailor recommendations for your group.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {groupOptions.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => { log("onboarding.group_select", { groupType: opt.value }); setGroup(opt.value); }}
-                  className={`text-left px-4 py-4 rounded-xl border-2 transition-all ${
+                  className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
                     group === opt.value
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
@@ -481,19 +482,19 @@ export default function OnboardingPage() {
 
         {/* Step 5a: Child Ages (conditional, NEW) */}
         {step === "childAges" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">How old are your kids?</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
                 Select all that apply — we&apos;ll recommend family-friendly options.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {childAgeOptions.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => { log("onboarding.child_age_toggle", { age: String(opt.value) }); toggleChildAge(opt.value); }}
-                  className={`text-left px-4 py-4 rounded-xl border-2 transition-all ${
+                  className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
                     childAges.includes(opt.value)
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
@@ -509,19 +510,19 @@ export default function OnboardingPage() {
 
         {/* Step 6: Chase Willingness */}
         {step === "chase" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Will you travel for a big storm?</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
                 We&apos;ll watch for chase-worthy storms and help you get there.
               </p>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {chaseOptions.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => { log("onboarding.chase_select", { value: opt.value }); setChase(opt.value); }}
-                  className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${
+                  className={`w-full text-left px-5 py-3 rounded-xl border-2 transition-all ${
                     chase === opt.value
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
@@ -537,19 +538,19 @@ export default function OnboardingPage() {
 
         {/* Step 7: Decision Triggers (NEW, multi-select) */}
         {step === "triggers" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">What makes you decide to ski?</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
                 Select all that apply.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {triggerOptions.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => { log("onboarding.trigger_toggle", { trigger: opt.value }); toggleTrigger(opt.value); }}
-                  className={`text-left px-4 py-4 rounded-xl border-2 transition-all ${
+                  className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
                     triggers.includes(opt.value)
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
@@ -568,19 +569,19 @@ export default function OnboardingPage() {
 
         {/* Step 8: Experience Level (NEW) */}
         {step === "experience" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">How would you describe your skiing?</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
                 We&apos;ll match you with appropriate terrain recommendations.
               </p>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {experienceOptions.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => { log("onboarding.experience_select", { level: opt.value }); setExperience(opt.value); }}
-                  className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${
+                  className={`w-full text-left px-5 py-3 rounded-xl border-2 transition-all ${
                     experience === opt.value
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
@@ -596,21 +597,21 @@ export default function OnboardingPage() {
 
         {/* Step 9: Persona Confirmation (NEW) */}
         {step === "personaConfirm" && detectedPersona && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {!showPersonaOverride ? (
               <>
                 <div className="text-center">
-                  <span className="text-5xl mb-4 block">{getPersonaInfoV2(detectedPersona.primary).emoji}</span>
+                  <span className="text-4xl mb-2 block">{getPersonaInfoV2(detectedPersona.primary).emoji}</span>
                   <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                     Sounds like you&apos;re a {getPersonaInfoV2(detectedPersona.primary).label}
                   </h1>
-                  <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-2">
+                  <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
                     Based on {getClassificationReason(detectedPersona)}
                   </p>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-4 lg:p-5">
-                  <p className="text-sm text-gray-700 dark:text-slate-300 mb-3">
+                <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-3 lg:p-4">
+                  <p className="text-sm text-gray-700 dark:text-slate-300 mb-2">
                     {getPersonaInfoV2(detectedPersona.primary).description}
                   </p>
                   <div className="text-xs text-gray-500 dark:text-slate-400">
@@ -673,7 +674,7 @@ export default function OnboardingPage() {
 
         {/* Step 10: Confirmation */}
         {step === "confirm" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Here&apos;s what we found</h1>
               <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
@@ -688,7 +689,7 @@ export default function OnboardingPage() {
             </div>
 
             {loadingRecs && (
-              <div className="flex flex-col items-center py-8 gap-3">
+              <div className="flex flex-col items-center py-4 gap-3">
                 <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                 <p className="text-sm text-gray-500 dark:text-slate-400">Analyzing resorts for you...</p>
               </div>
@@ -699,7 +700,7 @@ export default function OnboardingPage() {
                 {recommendations.recommendations.map((r) => (
                   <div
                     key={r.slug}
-                    className="px-4 lg:px-5 py-3 lg:py-3.5 bg-gray-50 dark:bg-slate-800 rounded-xl"
+                    className="px-4 py-2.5 bg-gray-50 dark:bg-slate-800 rounded-xl"
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm lg:text-base font-medium text-gray-900 dark:text-white">{r.name}</span>
@@ -714,7 +715,7 @@ export default function OnboardingPage() {
             )}
 
             {!loadingRecs && recsError && (
-              <div className="text-center py-6">
+              <div className="text-center py-4">
                 <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
                   We couldn&apos;t load personalized recommendations right now.
                 </p>
@@ -749,10 +750,11 @@ export default function OnboardingPage() {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Bottom CTA */}
-      <div className="shrink-0 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 px-6 md:px-8 lg:px-10 py-4">
+      <div className="shrink-0 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 px-6 md:px-8 lg:px-10 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <div className="max-w-lg lg:max-w-xl mx-auto w-full">
           {step === "personaConfirm" && !showPersonaOverride ? (
             <button
