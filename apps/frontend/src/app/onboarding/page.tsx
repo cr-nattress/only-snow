@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import { usePersona } from "@/context/PersonaContext";
 import { usePreferences } from "@/context/PreferencesContext";
@@ -90,11 +90,8 @@ const childAgeOptions = [
 import { resorts } from "@/data/resorts";
 import { geocodeLocation } from "@/lib/geocode";
 
-const ONBOARDING_STATE_KEY = "onlysnow_onboarding_state";
-
 function OnboardingContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { status } = useSession();
   const { setUserPersona } = usePersona();
   const { updatePreferences } = usePreferences();
@@ -220,24 +217,7 @@ function OnboardingContent() {
         setStep("signin");
         break;
       case "signin":
-        // Persist all onboarding data and go to dashboard
-        updatePreferences({
-          location,
-          lat: geocodedLat,
-          lng: geocodedLng,
-          passType: pass,
-          homeMountain: homeMountain || undefined,
-          driveRadius: radius,
-          chaseWillingness: chase || "no",
-          persona: detectedPersona
-            ? newToLegacyPersona(detectedPersona.primary)
-            : "powder-hunter",
-          userPersona: detectedPersona,
-          onboardingComplete: true,
-        });
-        // Clean up saved onboarding state
-        try { localStorage.removeItem(ONBOARDING_STATE_KEY); } catch {}
-        router.push("/dashboard");
+        // Handled by auto-skip effect or handleGoogleSignIn
         break;
     }
   }
@@ -276,64 +256,48 @@ function OnboardingContent() {
     );
   }
 
-  // Save onboarding state to localStorage before OAuth redirect
-  const saveOnboardingState = useCallback(() => {
-    try {
-      const state = {
-        location, pass, hasHomeMountain, homeMountain, homeMountainSearch,
-        radius, chase, frequency, group, childAges, triggers, experience,
-        detectedPersona, geocodedLat, geocodedLng,
-      };
-      localStorage.setItem(ONBOARDING_STATE_KEY, JSON.stringify(state));
-    } catch {}
-  }, [location, pass, hasHomeMountain, homeMountain, homeMountainSearch,
-      radius, chase, frequency, group, childAges, triggers, experience,
-      detectedPersona, geocodedLat, geocodedLng]);
-
-  // Restore onboarding state when returning from OAuth redirect
-  useEffect(() => {
-    if (searchParams.get("step") === "signin" && status === "authenticated") {
-      try {
-        const saved = localStorage.getItem(ONBOARDING_STATE_KEY);
-        if (saved) {
-          const s = JSON.parse(saved);
-          if (s.location) setLocation(s.location);
-          if (s.pass) setPass(s.pass);
-          if (s.hasHomeMountain !== null) setHasHomeMountain(s.hasHomeMountain);
-          if (s.homeMountain) setHomeMountain(s.homeMountain);
-          if (s.homeMountainSearch) setHomeMountainSearch(s.homeMountainSearch);
-          if (s.radius) setRadius(s.radius);
-          if (s.chase) setChase(s.chase);
-          if (s.frequency) setFrequency(s.frequency);
-          if (s.group) setGroup(s.group);
-          if (s.childAges) setChildAges(s.childAges);
-          if (s.triggers) setTriggers(s.triggers);
-          if (s.experience) setExperience(s.experience);
-          if (s.detectedPersona) {
-            setDetectedPersona(s.detectedPersona);
-            setUserPersona(s.detectedPersona);
-          }
-          if (s.geocodedLat !== undefined) setGeocodedLat(s.geocodedLat);
-          if (s.geocodedLng !== undefined) setGeocodedLng(s.geocodedLng);
-          setStep("signin");
-        }
-      } catch {}
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
-
   // Auto-skip signin step if already authenticated
   useEffect(() => {
     if (step === "signin" && status === "authenticated") {
-      next();
+      // Already signed in — save preferences and go to dashboard
+      updatePreferences({
+        location,
+        lat: geocodedLat,
+        lng: geocodedLng,
+        passType: pass,
+        homeMountain: homeMountain || undefined,
+        driveRadius: radius,
+        chaseWillingness: chase || "no",
+        persona: detectedPersona
+          ? newToLegacyPersona(detectedPersona.primary)
+          : "powder-hunter",
+        userPersona: detectedPersona,
+        onboardingComplete: true,
+      });
+      router.push("/dashboard");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, status]);
 
   function handleGoogleSignIn() {
     log("onboarding.google_signin");
-    saveOnboardingState();
-    signIn("google", { callbackUrl: "/onboarding?step=signin" });
+    // Save preferences BEFORE the OAuth redirect so they survive the page reload.
+    // After auth, NextAuth redirects to /dashboard where preferences are already saved.
+    updatePreferences({
+      location,
+      lat: geocodedLat,
+      lng: geocodedLng,
+      passType: pass,
+      homeMountain: homeMountain || undefined,
+      driveRadius: radius,
+      chaseWillingness: chase || "no",
+      persona: detectedPersona
+        ? newToLegacyPersona(detectedPersona.primary)
+        : "powder-hunter",
+      userPersona: detectedPersona,
+      onboardingComplete: true,
+    });
+    signIn("google", { callbackUrl: "/dashboard" });
   }
 
   // Filtered resorts for home mountain search
@@ -874,13 +838,5 @@ function OnboardingContent() {
 }
 
 export default function OnboardingPage() {
-  return (
-    <Suspense fallback={
-      <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 flex items-center justify-center">
-        <div className="text-gray-500 dark:text-slate-400">Loading...</div>
-      </div>
-    }>
-      <OnboardingContent />
-    </Suspense>
-  );
+  return <OnboardingContent />;
 }
