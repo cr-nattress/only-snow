@@ -9,13 +9,15 @@ config({ path: resolve(__dirname, '../../../.env') });
 
 import { createDb } from '@onlysnow/db';
 import { resorts, resortConditions } from '@onlysnow/db';
-import { logger } from '@onlysnow/pipeline-core';
+import { eq } from 'drizzle-orm';
 import { tryCreateRedisClient, CacheKeys, cache } from '@onlysnow/redis';
-import { REGION_TO_STATE, fetchConditionsForState, matchResortConditions } from './index.js';
+import { RESORT_TO_LIFTIE } from './liftie-mapping.js';
+import { fetchLiftieConditions } from './index.js';
+import { fetchTrailConditions, RESORT_TO_TERRAIN_URL } from './vail-resorts-scraper.js';
 
 async function main() {
   const startTime = Date.now();
-  console.log('=== Conditions Refresh Pipeline (CLI) ===\n');
+  console.log('=== Conditions Refresh Pipeline ===\n');
 
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
@@ -31,80 +33,96 @@ async function main() {
 
   // 1. Fetch all resorts
   const allResorts = await db.select().from(resorts);
-  console.log(`Found ${allResorts.length} resorts to process.\n`);
+  const withLiftie = allResorts.filter((r) => RESORT_TO_LIFTIE[r.slug]);
+  const withTrails = allResorts.filter((r) => r.slug in RESORT_TO_TERRAIN_URL);
+  const actionable = allResorts.filter((r) => RESORT_TO_LIFTIE[r.slug] || r.slug in RESORT_TO_TERRAIN_URL);
 
-  // 2. Group resorts by state (derived from region)
-  const resortsByState = new Map<string, typeof allResorts>();
-  let unmappedCount = 0;
+  console.log(`Found ${allResorts.length} resorts total`);
+  console.log(`  Liftie lift data:    ${withLiftie.length} resorts`);
+  console.log(`  Vail trail scraper:  ${withTrails.length} resorts`);
+  console.log(`  Actionable:          ${actionable.length} resorts`);
+  console.log(`  Skipped (no source): ${allResorts.length - actionable.length}\n`);
 
-  for (const resort of allResorts) {
-    const state = REGION_TO_STATE[resort.region];
-    if (!state) {
-      unmappedCount++;
-      console.log(`  WARN: No state mapping for region "${resort.region}" (${resort.name})`);
-      continue;
-    }
-    const list = resortsByState.get(state) ?? [];
-    list.push(resort);
-    resortsByState.set(state, list);
-  }
+  // 2. Process each resort with at least one data source
+  let liftUpdates = 0;
+  let trailUpdates = 0;
+  let errors = 0;
 
-  console.log(`Mapped to ${resortsByState.size} unique states (${unmappedCount} unmapped)\n`);
+  for (let i = 0; i < actionable.length; i++) {
+    const resort = actionable[i];
+    const liftieSlug = RESORT_TO_LIFTIE[resort.slug];
+    const hasTrailScraper = resort.slug in RESORT_TO_TERRAIN_URL;
 
-  // 3. Fetch conditions per state (instead of per resort — much fewer API calls)
-  let updated = 0;
-  let noMatch = 0;
-  let apiErrors = 0;
-  const stateEntries = Array.from(resortsByState.entries());
+    process.stdout.write(`[${i + 1}/${actionable.length}] ${resort.name}...`);
 
-  for (let i = 0; i < stateEntries.length; i++) {
-    const [state, stateResorts] = stateEntries[i];
-    process.stdout.write(`[${i + 1}/${stateEntries.length}] Fetching ${state} (${stateResorts.length} resorts)...`);
+    // Fetch lift data from Liftie
+    const liftData = liftieSlug ? await fetchLiftieConditions(liftieSlug) : null;
 
-    const stateData = await fetchConditionsForState(state);
-    if (!stateData) {
-      console.log(' API ERROR');
-      apiErrors++;
+    // Fetch trail data from Vail Resorts scraper
+    const trailData = hasTrailScraper ? await fetchTrailConditions(resort.slug) : null;
+
+    if (!liftData && !trailData) {
+      console.log(' ERROR');
+      errors++;
       continue;
     }
 
-    console.log(` ${stateData.length} resorts from API`);
+    // Build the upsert payload with only the fields we have data for
+    const conditionValues: Record<string, unknown> = {
+      source: 'liftie+scraper',
+      updatedAt: new Date(),
+    };
 
-    // Match each resort against the cached state data
-    for (const resort of stateResorts) {
-      const conditions = matchResortConditions(resort.name, stateData);
-      if (!conditions) {
-        noMatch++;
-        continue;
-      }
-
-      await db
-        .insert(resortConditions)
-        .values({
-          resortId: resort.id,
-          ...conditions,
-          source: 'snocountry',
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: resortConditions.resortId,
-          set: {
-            ...conditions,
-            source: 'snocountry',
-            updatedAt: new Date(),
-          },
-        });
-
-      if (redis) {
-        await cache.invalidate(redis, CacheKeys.conditions(resort.id));
-        await cache.invalidate(redis, CacheKeys.resortDetail(resort.id));
-      }
-      updated++;
+    if (liftData) {
+      conditionValues.liftsOpen = liftData.liftsOpen;
+      conditionValues.resortStatus = liftData.resortStatus;
+      liftUpdates++;
     }
 
-    // Rate-limit between state API calls
-    if (i < stateEntries.length - 1) {
-      await new Promise((r) => setTimeout(r, 300));
+    if (trailData) {
+      conditionValues.trailsOpen = trailData.trailsOpen;
+      trailUpdates++;
+    }
+
+    await db
+      .insert(resortConditions)
+      .values({
+        resortId: resort.id,
+        ...conditionValues,
+      })
+      .onConflictDoUpdate({
+        target: resortConditions.resortId,
+        set: conditionValues,
+      });
+
+    // Update static totals on the resorts table if they changed
+    const resortUpdates: Record<string, unknown> = {};
+    if (liftData && liftData.liftsTotal > 0 && liftData.liftsTotal !== resort.totalLifts) {
+      resortUpdates.totalLifts = liftData.liftsTotal;
+    }
+    if (trailData && trailData.trailsTotal > 0 && trailData.trailsTotal !== resort.totalTrails) {
+      resortUpdates.totalTrails = trailData.trailsTotal;
+    }
+    if (Object.keys(resortUpdates).length > 0) {
+      resortUpdates.updatedAt = new Date();
+      await db.update(resorts).set(resortUpdates).where(eq(resorts.id, resort.id));
+    }
+
+    if (redis) {
+      await cache.invalidate(redis, CacheKeys.conditions(resort.id));
+      await cache.invalidate(redis, CacheKeys.resortDetail(resort.id));
+    }
+
+    // Build output line
+    const parts: string[] = [];
+    if (liftData) parts.push(`${liftData.liftsOpen}/${liftData.liftsTotal} lifts`);
+    if (trailData) parts.push(`${trailData.trailsOpen}/${trailData.trailsTotal} trails`);
+    console.log(` ${parts.join(', ')}`);
+
+    // Rate-limit: 100ms between requests (longer for scraped pages)
+    const delay = hasTrailScraper ? 500 : 100;
+    if (i < actionable.length - 1) {
+      await new Promise((r) => setTimeout(r, delay));
     }
   }
 
@@ -112,11 +130,10 @@ async function main() {
   const durationSec = (durationMs / 1000).toFixed(1);
 
   console.log('\n=== Summary ===');
-  console.log(`Resorts updated:   ${updated}`);
-  console.log(`No match found:    ${noMatch}`);
-  console.log(`API errors:        ${apiErrors}`);
-  console.log(`Unmapped regions:  ${unmappedCount}`);
-  console.log(`Duration:          ${durationSec}s`);
+  console.log(`Lift updates:       ${liftUpdates}`);
+  console.log(`Trail updates:      ${trailUpdates}`);
+  console.log(`Errors:             ${errors}`);
+  console.log(`Duration:           ${durationSec}s`);
 
   process.exit(0);
 }

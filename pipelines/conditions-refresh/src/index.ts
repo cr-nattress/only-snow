@@ -1,174 +1,87 @@
 import { http } from '@google-cloud/functions-framework';
 import { createDb } from '@onlysnow/db';
 import { resorts, resortConditions } from '@onlysnow/db';
-import { logger, batchProcess } from '@onlysnow/pipeline-core';
+import { eq } from 'drizzle-orm';
+import { logger } from '@onlysnow/pipeline-core';
 import { tryCreateRedisClient, CacheKeys, cache } from '@onlysnow/redis';
+import { RESORT_TO_LIFTIE } from './liftie-mapping.js';
+import { fetchTrailConditions, RESORT_TO_TERRAIN_URL } from './vail-resorts-scraper.js';
 
 const log = logger;
 
 // ---------------------------------------------------------------------------
-// Region → State mapping (exhaustive for all 53 regions in resorts.json)
+// Liftie API types
 // ---------------------------------------------------------------------------
 
-export const REGION_TO_STATE: Record<string, string> = {
-  // Colorado
-  'i70-corridor': 'CO',
-  'front-range': 'CO',
-  'steamboat-area': 'CO',
-  'aspen-area': 'CO',
-  'san-juans': 'CO',
-  // Utah
-  'salt-lake-cottonwoods': 'UT',
-  'park-city-area': 'UT',
-  'ogden-area': 'UT',
-  // New Mexico
-  'taos-area': 'NM',
-  // Wyoming
-  'jackson-hole-area': 'WY',
-  // Montana
-  'big-sky-area': 'MT',
-  // California
-  'lake-tahoe': 'CA',
-  'sierra-nevada': 'CA',
-  'southern-california': 'CA',
-  // Pacific Northwest — WA by default (OR resorts use 'pacific-northwest' too)
-  'pacific-northwest': 'WA',
-  // Idaho
-  'sun-valley-area': 'ID',
-  'northern-idaho': 'ID',
-  'mccall-area': 'ID',
-  'boise-area': 'ID',
-  // Arizona
-  'arizona': 'AZ',
-  // Pennsylvania
-  'poconos': 'PA',
-  'laurel-highlands': 'PA',
-  // Maine
-  'western-maine': 'ME',
-  'northern-maine': 'ME',
-  'southern-maine': 'ME',
-  // Connecticut / Rhode Island
-  'connecticut': 'CT',
-  'rhode-island': 'RI',
-  // Vermont
-  'central-vermont': 'VT',
-  'northern-vermont': 'VT',
-  'southern-vermont': 'VT',
-  'northeast-kingdom': 'VT',
-  // New Hampshire
-  'white-mountains': 'NH',
-  'lakes-region-nh': 'NH',
-  // New York
-  'adirondacks': 'NY',
-  'catskills': 'NY',
-  'western-ny': 'NY',
-  'central-ny': 'NY',
-  // New Jersey
-  'northern-nj': 'NJ',
-  // Single-state regions
-  'massachusetts': 'MA',
-  'michigan': 'MI',
-  'wisconsin': 'WI',
-  'minnesota': 'MN',
-  'west-virginia': 'WV',
-  'north-carolina': 'NC',
-  'virginia': 'VA',
-  'tennessee': 'TN',
-  'maryland': 'MD',
-  'indiana': 'IN',
-  'iowa': 'IA',
-  'ohio': 'OH',
-  'missouri': 'MO',
-  'alaska': 'AK',
-  'nevada': 'NV',
-};
-
-// ---------------------------------------------------------------------------
-// SnoCountry API types
-// ---------------------------------------------------------------------------
-
-export interface SnoCountryConditions {
-  snowfall24h: number | null;
-  snowfall48h: number | null;
-  snowfall72h: number | null;
-  baseDepth: number | null;
-  summitDepth: number | null;
-  liftsOpen: number | null;
-  trailsOpen: number | null;
-  surfaceCondition: string | null;
-  resortStatus: string | null;
+export interface LiftieResponse {
+  id: string;
+  name: string;
+  lifts: {
+    status: Record<string, 'open' | 'closed' | 'scheduled' | 'hold'>;
+    stats: {
+      open: number;
+      hold: number;
+      scheduled: number;
+      closed: number;
+      percentage: {
+        open: number;
+        hold: number;
+        scheduled: number;
+        closed: number;
+      };
+    };
+  };
+  weather?: {
+    conditions?: string;
+    temperature?: { max: number };
+  };
 }
 
-export interface SnoCountryRow {
-  resort_name: string;
-  snowfall_24hr: string;
-  snowfall_48hr: string;
-  snowfall_72hr: string;
-  base_depth: string;
-  summit_depth: string;
-  lifts_open: string;
-  trails_open: string;
-  surface_condition: string;
-  resort_status: string;
-  [key: string]: string;
+export interface LiftConditions {
+  liftsOpen: number;
+  liftsTotal: number;
+  resortStatus: 'open' | 'closed';
 }
 
 // ---------------------------------------------------------------------------
-// API fetchers (exported for CLI reuse)
+// API fetcher (exported for CLI reuse)
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch all resort conditions for a given state from the SnoCountry API.
- * Returns the raw rows array, or null on error.
+ * Fetch lift status for a resort from the Liftie API.
+ * Returns parsed conditions, or null on error.
  */
-export async function fetchConditionsForState(state: string): Promise<SnoCountryRow[] | null> {
+export async function fetchLiftieConditions(liftieSlug: string): Promise<LiftConditions | null> {
   try {
-    const url = `https://skiapp.onthesnow.com/app/widgets/resortGuide?region=${encodeURIComponent(state)}&regionType=state&lang=en&format=json`;
+    const url = `https://liftie.info/api/resort/${encodeURIComponent(liftieSlug)}`;
     const response = await fetch(url);
 
     if (!response.ok) {
-      log.warn(`SnoCountry API returned ${response.status} for ${state}`);
+      log.warn(`Liftie API returned ${response.status} for ${liftieSlug}`);
       return null;
     }
 
-    const data = (await response.json()) as Record<string, unknown>;
-    return (data?.rows ?? []) as SnoCountryRow[];
+    const data = (await response.json()) as LiftieResponse;
+    const stats = data.lifts?.stats;
+    if (!stats) {
+      log.warn(`No lift stats in Liftie response for ${liftieSlug}`);
+      return null;
+    }
+
+    const liftsOpen = stats.open ?? 0;
+    const liftsTotal = (stats.open ?? 0) + (stats.hold ?? 0) + (stats.scheduled ?? 0) + (stats.closed ?? 0);
+
+    return {
+      liftsOpen,
+      liftsTotal,
+      resortStatus: liftsOpen > 0 ? 'open' : 'closed',
+    };
   } catch (error) {
-    log.error(`Error fetching conditions for state ${state}`, {
+    log.error(`Error fetching Liftie data for ${liftieSlug}`, {
       error: error instanceof Error ? error.message : String(error),
     });
     return null;
   }
-}
-
-/**
- * Match a resort name against the SnoCountry rows for a state.
- * Uses fuzzy matching (normalized alphanumeric comparison).
- */
-export function matchResortConditions(
-  resortName: string,
-  rows: SnoCountryRow[],
-): SnoCountryConditions | null {
-  const normalizedName = resortName.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-  const match = rows.find((row) => {
-    const candidateName = (row.resort_name ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    return candidateName.includes(normalizedName) || normalizedName.includes(candidateName);
-  });
-
-  if (!match) return null;
-
-  return {
-    snowfall24h: parseFloat(match.snowfall_24hr) || null,
-    snowfall48h: parseFloat(match.snowfall_48hr) || null,
-    snowfall72h: parseFloat(match.snowfall_72hr) || null,
-    baseDepth: parseInt(match.base_depth) || null,
-    summitDepth: parseInt(match.summit_depth) || null,
-    liftsOpen: parseInt(match.lifts_open) || null,
-    trailsOpen: parseInt(match.trails_open) || null,
-    surfaceCondition: match.surface_condition ?? null,
-    resortStatus: match.resort_status ?? null,
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -192,65 +105,81 @@ http('conditionsRefresh', async (req, res) => {
   const allResorts = await db.select().from(resorts);
   log.info(`Processing ${allResorts.length} resorts`);
 
-  // Group resorts by state
-  const resortsByState = new Map<string, typeof allResorts>();
-  for (const resort of allResorts) {
-    const state = REGION_TO_STATE[resort.region];
-    if (!state) {
-      log.warn(`No state mapping for region "${resort.region}"`, { resort: resort.name });
-      continue;
-    }
-    const list = resortsByState.get(state) ?? [];
-    list.push(resort);
-    resortsByState.set(state, list);
-  }
-
-  let updated = 0;
+  let liftUpdates = 0;
+  let trailUpdates = 0;
+  let skipped = 0;
   let errors = 0;
 
-  // Fetch conditions per state (batched)
-  for (const [state, stateResorts] of resortsByState) {
-    const stateData = await fetchConditionsForState(state);
-    if (!stateData) {
-      errors += stateResorts.length;
+  for (const resort of allResorts) {
+    const liftieSlug = RESORT_TO_LIFTIE[resort.slug];
+    const hasTrailScraper = resort.slug in RESORT_TO_TERRAIN_URL;
+
+    if (!liftieSlug && !hasTrailScraper) {
+      skipped++;
       continue;
     }
 
-    for (const resort of stateResorts) {
-      const conditions = matchResortConditions(resort.name, stateData);
-      if (!conditions) {
-        errors++;
-        continue;
-      }
+    // Fetch lift data from Liftie
+    const liftData = liftieSlug ? await fetchLiftieConditions(liftieSlug) : null;
 
-      await db
-        .insert(resortConditions)
-        .values({
-          resortId: resort.id,
-          ...conditions,
-          source: 'snocountry',
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: resortConditions.resortId,
-          set: {
-            ...conditions,
-            source: 'snocountry',
-            updatedAt: new Date(),
-          },
-        });
+    // Fetch trail data from Vail Resorts scraper
+    const trailData = hasTrailScraper ? await fetchTrailConditions(resort.slug) : null;
 
-      await cache.invalidate(redis, CacheKeys.conditions(resort.id));
-      await cache.invalidate(redis, CacheKeys.resortDetail(resort.id));
-      updated++;
+    if (!liftData && !trailData) {
+      errors++;
+      continue;
     }
 
-    // Rate-limit between state API calls
-    await new Promise((r) => setTimeout(r, 300));
+    // Build the upsert payload with only the fields we have data for
+    const conditionValues: Record<string, unknown> = {
+      source: 'liftie+scraper',
+      updatedAt: new Date(),
+    };
+
+    if (liftData) {
+      conditionValues.liftsOpen = liftData.liftsOpen;
+      conditionValues.resortStatus = liftData.resortStatus;
+      liftUpdates++;
+    }
+
+    if (trailData) {
+      conditionValues.trailsOpen = trailData.trailsOpen;
+      trailUpdates++;
+    }
+
+    await db
+      .insert(resortConditions)
+      .values({
+        resortId: resort.id,
+        ...conditionValues,
+      })
+      .onConflictDoUpdate({
+        target: resortConditions.resortId,
+        set: conditionValues,
+      });
+
+    // Update static totals on the resorts table if they changed
+    const resortUpdates: Record<string, unknown> = {};
+    if (liftData && liftData.liftsTotal > 0 && liftData.liftsTotal !== resort.totalLifts) {
+      resortUpdates.totalLifts = liftData.liftsTotal;
+    }
+    if (trailData && trailData.trailsTotal > 0 && trailData.trailsTotal !== resort.totalTrails) {
+      resortUpdates.totalTrails = trailData.trailsTotal;
+    }
+    if (Object.keys(resortUpdates).length > 0) {
+      resortUpdates.updatedAt = new Date();
+      await db.update(resorts).set(resortUpdates).where(eq(resorts.id, resort.id));
+    }
+
+    await cache.invalidate(redis, CacheKeys.conditions(resort.id));
+    await cache.invalidate(redis, CacheKeys.resortDetail(resort.id));
+
+    // Rate-limit: 100ms between requests
+    await new Promise((r) => setTimeout(r, 100));
   }
 
   const duration = Date.now() - startTime;
-  log.info('Conditions refresh complete', { updated, errors, durationMs: duration });
+  log.info('Conditions refresh complete', { liftUpdates, trailUpdates, skipped, errors, durationMs: duration });
 
-  res.json({ updated, errors, durationMs: duration });
+  res.json({ liftUpdates, trailUpdates, skipped, errors, durationMs: duration });
 });
