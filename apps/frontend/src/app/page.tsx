@@ -1,43 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 
 export default function Home() {
   const { status } = useSession();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const isAuthenticated = status === "authenticated";
 
   return (
     <div className="h-screen relative overflow-hidden">
-      {/* Animated Background - Replace with Whisk AI generated GIF */}
+      {/* Animated Video Background */}
       <div className="absolute inset-0 z-0">
-        {/* Placeholder for animated GIF background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950 animate-gradient-shift" />
-
-        {/* Animated snow particles overlay */}
-        <div className="absolute inset-0 opacity-30">
-          {mounted && [...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-2 h-2 bg-white rounded-full animate-snow-fall"
-              style={{
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${5 + Math.random() * 10}s`,
-              }}
-            />
-          ))}
-        </div>
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/splash-animated.mp4" type="video/mp4" />
+        </video>
 
         {/* Gradient overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/20 to-blue-950/60 dark:to-slate-950/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/50" />
       </div>
 
       {/* Main Content */}
@@ -46,31 +32,23 @@ export default function Home() {
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-4">
           {/* Logo & Tagline */}
           <div className="text-center mb-4 md:mb-6 space-y-3">
-            {/* Animated Logo */}
-            <div className="inline-flex items-center gap-3 mb-2">
-              <span className="text-5xl md:text-7xl animate-bounce-slow">🏔️</span>
-            </div>
-
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-              Find Your
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white animate-shimmer">
-                Perfect Pow Day
+<h1 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
+              <span className="text-white">Chase storms.</span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-white">
+                Not forecasts.
               </span>
             </h1>
 
-            <p className="text-base md:text-xl text-blue-50 dark:text-slate-300 max-w-2xl mx-auto font-medium leading-snug mt-3">
-              Tell us where you live and what pass you have.
-              <span className="block mt-1 text-white font-bold">
-                We'll tell you where to ski and when.
-              </span>
+            <p className="text-base md:text-xl text-white max-w-2xl mx-auto font-bold leading-snug mt-3 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+              Know exactly where to ski — every day.
             </p>
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md mt-4">
+          <div className="flex flex-col items-center gap-3 w-full max-w-md mt-4">
             <Link
               href={isAuthenticated ? "/dashboard" : "/onboarding"}
-              className="group relative overflow-hidden rounded-xl bg-white hover:bg-blue-50 text-blue-600 dark:text-blue-700 px-6 py-3.5 text-base font-bold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-2xl btn-press"
+              className="group relative overflow-hidden rounded-xl bg-white/95 hover:bg-white text-slate-900 px-6 py-3.5 text-base font-bold text-center transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg shadow-black/30 btn-press"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
                 {isAuthenticated ? (
@@ -80,7 +58,7 @@ export default function Home() {
                   </>
                 ) : (
                   <>
-                    <span>Start Your Journey</span>
+                    <span>Get Started</span>
                     <span className="text-xl">🚀</span>
                   </>
                 )}
@@ -94,12 +72,11 @@ export default function Home() {
             {[
               { icon: "❄️", text: "Live Snow Reports" },
               { icon: "🌨️", text: "Storm Tracking" },
-              { icon: "🗺️", text: "Regional View" },
-              { icon: "🔔", text: "Smart Alerts" },
+{ icon: "🔔", text: "Smart Alerts" },
             ].map((feature) => (
               <div
                 key={feature.text}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-medium"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/30 text-white text-xs font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
               >
                 <span className="text-base">{feature.icon}</span>
                 <span>{feature.text}</span>
