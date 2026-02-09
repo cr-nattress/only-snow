@@ -8,7 +8,7 @@ import type { UserLocation } from "@/components/ResortMap";
 import ResortTable from "@/components/ResortTable";
 import AiAnalysis from "@/components/ExpertTake";
 import { usePreferences } from "@/context/PreferencesContext";
-import { geocodeLocation, driveMinutesToMiles } from "@/lib/geocode";
+import { driveMinutesToMiles } from "@/lib/geocode";
 
 const ResortMap = dynamic(() => import("@/components/ResortMap"), { ssr: false });
 
@@ -21,25 +21,21 @@ export default function ApiDashboard() {
   const loadData = useCallback(async () => {
     setLoading(true);
 
-    // Geocode user location for proximity filtering
-    let lat: number | undefined;
-    let lng: number | undefined;
+    // Use stored coordinates from onboarding (no geocoding needed)
+    let lat = preferences.lat;
+    let lng = preferences.lng;
     let radiusMiles: number | undefined;
 
-    if (preferences.location) {
-      const coords = await geocodeLocation(preferences.location);
-      if (coords) {
-        lat = coords.lat;
-        lng = coords.lng;
-        radiusMiles = driveMinutesToMiles(preferences.driveRadius);
-
-        setUserLocation({
-          location: preferences.location,
-          lat: coords.lat,
-          lng: coords.lng,
-          driveRadiusMiles: radiusMiles,
-        });
-      }
+    if (preferences.location && lat && lng) {
+      radiusMiles = driveMinutesToMiles(preferences.driveRadius);
+      setUserLocation({
+        location: preferences.location,
+        lat,
+        lng,
+        driveRadiusMiles: radiusMiles,
+      });
+    } else if (preferences.location && (!lat || !lng)) {
+      console.warn('No coordinates saved for location:', preferences.location, '- location filtering disabled');
     }
 
     try {
@@ -52,14 +48,15 @@ export default function ApiDashboard() {
           : undefined,
       });
       setData(result);
-    } catch {
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
       // Fall back to unfiltered
       const result = await fetchDashboardData();
       setData(result);
     } finally {
       setLoading(false);
     }
-  }, [preferences.location, preferences.driveRadius, preferences.passType]);
+  }, [preferences.location, preferences.lat, preferences.lng, preferences.driveRadius, preferences.passType]);
 
   useEffect(() => {
     loadData();

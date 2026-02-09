@@ -145,6 +145,8 @@ export interface ResortDetail {
   snowpackPercent: number;
 }
 
+export type ChaseTier = 'withinReach' | 'worthTheTrip';
+
 export interface ChaseRegion {
   id: string;
   name: string;
@@ -156,6 +158,9 @@ export interface ChaseRegion {
   bestAirport?: string;
   lat: number;
   lng: number;
+  driveMinutes?: number | null;
+  driveDisplay?: string;
+  chaseScore?: number;
 }
 
 export interface TripPlan {

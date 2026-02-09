@@ -12,15 +12,11 @@ export default function Home() {
     <div className="h-screen relative overflow-hidden">
       {/* Animated Video Background */}
       <div className="absolute inset-0 z-0">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
+        <img
+          src="/splash-animated.gif"
+          alt=""
           className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src="/splash-animated.mp4" type="video/mp4" />
-        </video>
+        />
 
         {/* Gradient overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/50" />

@@ -128,30 +128,19 @@ export async function fetchDashboardData(filters?: DashboardFilters): Promise<Da
 
 // ── Chase page data ─────────────────────────────────────────────────
 
+const WITHIN_REACH_MAX_MINUTES = 10 * 60; // 10 hours
+const WORTH_THE_TRIP_MIN_SNOWFALL = 6; // 6" minimum for Tier 2
+
 export interface ChasePageData {
-  regions: ChaseRegion[];
+  withinReach: ChaseRegion[];
+  worthTheTrip: ChaseRegion[];
+  regions: ChaseRegion[]; // flat list fallback (no location or chaseWillingness='no')
 }
 
 export interface ChaseFilters {
   lat?: number;
   lng?: number;
-  radiusMiles?: number;
-}
-
-/** Haversine distance in miles between two coordinates */
-function haversineDistance(
-  lat1: number, lng1: number,
-  lat2: number, lng2: number,
-): number {
-  const R = 3959; // Earth's radius in miles
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  chaseWillingness?: string;
 }
 
 export async function fetchChasePageData(filters?: ChaseFilters): Promise<ChasePageData> {
@@ -160,44 +149,65 @@ export async function fetchChasePageData(filters?: ChaseFilters): Promise<ChaseP
   }
 
   const client = getClient();
-  const regionSummaries = await client.getRegions();
+  const hasLocation = filters?.lat != null && filters?.lng != null;
+
+  // Pass lat/lng so backend can enrich with drive times
+  const regionSummaries = await client.getRegions(
+    hasLocation ? { lat: filters!.lat, lng: filters!.lng } : undefined,
+  );
   const regions = toChaseRegions(regionSummaries);
 
+  // If we have drive time data, split into tiers
+  const hasDriveData = regions.some((r) => r.driveMinutes != null);
+
+  if (hasDriveData) {
+    const withinReach: ChaseRegion[] = [];
+    const worthTheTrip: ChaseRegion[] = [];
+
+    for (const region of regions) {
+      if (region.driveMinutes != null && region.driveMinutes <= WITHIN_REACH_MAX_MINUTES) {
+        withinReach.push(region);
+      } else {
+        // Tier 2: far away or no drive data — require minimum snowfall
+        const snowfall = parseFloat(region.forecastTotal) || 0;
+        if (snowfall >= WORTH_THE_TRIP_MIN_SNOWFALL) {
+          worthTheTrip.push(region);
+        }
+      }
+    }
+
+    // Tier 1: sort by chase score (highest first)
+    withinReach.sort((a, b) => (b.chaseScore ?? 0) - (a.chaseScore ?? 0));
+
+    // Tier 2: sort by raw snowfall (highest first)
+    worthTheTrip.sort((a, b) => {
+      const snowA = parseFloat(a.forecastTotal) || 0;
+      const snowB = parseFloat(b.forecastTotal) || 0;
+      return snowB - snowA;
+    });
+
+    // If chaseWillingness is 'driving', hide Tier 2
+    const willingness = filters?.chaseWillingness;
+    return {
+      withinReach,
+      worthTheTrip: willingness === 'driving' ? [] : worthTheTrip,
+      regions: [...withinReach, ...worthTheTrip],
+    };
+  }
+
+  // No drive data — fall back to severity-based sort
   const severityOrder: Record<string, number> = {
     chase: 0,
     significant: 1,
     moderate: 2,
     quiet: 3,
   };
-
-  if (filters?.lat != null && filters?.lng != null) {
-    const maxMiles = filters.radiusMiles ?? 600; // default 10hr drive
-
-    // Filter to regions within driving range
-    const nearby = regions.filter((r) => {
-      const dist = haversineDistance(filters.lat!, filters.lng!, r.lat, r.lng);
-      return dist <= maxMiles;
-    });
-
-    // Sort by severity first, then distance within same severity
-    nearby.sort((a, b) => {
-      const sevDiff = (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9);
-      if (sevDiff !== 0) return sevDiff;
-      const distA = haversineDistance(filters.lat!, filters.lng!, a.lat, a.lng);
-      const distB = haversineDistance(filters.lat!, filters.lng!, b.lat, b.lng);
-      return distA - distB;
-    });
-
-    return { regions: nearby };
-  }
-
-  // No location — sort by severity only
   regions.sort(
     (a, b) =>
       (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9),
   );
 
-  return { regions };
+  return { withinReach: [], worthTheTrip: [], regions };
 }
 
 // ── Region comparison ───────────────────────────────────────────────

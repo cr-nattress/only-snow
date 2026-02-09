@@ -3,8 +3,10 @@ import { withLogging } from '@/lib/api-logger';
 import { eq, sql } from 'drizzle-orm';
 import { resorts, resortConditions } from '@onlysnow/db';
 import type { OnboardingRecommendationResponse } from '@onlysnow/types';
+import { CacheKeys, CacheTTL, cache } from '@onlysnow/redis';
 import Anthropic from '@anthropic-ai/sdk';
 import { getDb } from '@/lib/db';
+import { getRedis } from '@/lib/redis';
 import { geocode } from '@/lib/geocode';
 
 export const dynamic = 'force-dynamic';
@@ -59,12 +61,20 @@ export const POST = withLogging(async function POST(request: NextRequest) {
     }
 
     const db = getDb();
+    const redis = getRedis();
 
-    // Geocode location
+    // Check recommendations cache (keyed by core filters)
+    const recsCacheKey = CacheKeys.onboardingRecs(location, passType, driveRadius);
+    const cachedRecs = await cache.get<OnboardingRecommendationResponse>(redis, recsCacheKey);
+    if (cachedRecs) {
+      return NextResponse.json(cachedRecs);
+    }
+
+    // Geocode location (with its own 30-day cache)
     let userLat = body.lat;
     let userLng = body.lng;
     if (!userLat || !userLng) {
-      const geo = await geocode(location);
+      const geo = await geocode(location, redis);
       if (geo) {
         userLat = geo.lat;
         userLng = geo.lng;
@@ -168,7 +178,7 @@ export const POST = withLogging(async function POST(request: NextRequest) {
     // If no API key, return a sensible fallback
     if (!process.env.ANTHROPIC_API_KEY) {
       const top = resortData.slice(0, 6);
-      return NextResponse.json({
+      const fallbackResult: OnboardingRecommendationResponse = {
         recommendations: top.map((r) => ({
           name: r.name,
           slug: r.slug,
@@ -178,7 +188,11 @@ export const POST = withLogging(async function POST(request: NextRequest) {
         })),
         summary: `We found ${filtered.length} resorts ${passType !== 'none' && passType !== 'multi' ? `on your ${passType.charAt(0).toUpperCase() + passType.slice(1)} pass ` : ''}within ${driveRadius >= 60 ? Math.round(driveRadius / 60) + ' hour' + (driveRadius >= 120 ? 's' : '') : driveRadius + ' minutes'} of ${location}.`,
         totalMatching: filtered.length,
-      } satisfies OnboardingRecommendationResponse);
+        lat: userLat,
+        lng: userLng,
+      };
+      await cache.set(redis, recsCacheKey, fallbackResult, CacheTTL.ONBOARDING_RECS);
+      return NextResponse.json(fallbackResult);
     }
 
     // Build LLM prompt
@@ -252,6 +266,11 @@ Guidelines:
 
     const result: OnboardingRecommendationResponse = JSON.parse(jsonText);
     result.totalMatching = filtered.length; // Ensure accuracy
+    result.lat = userLat; // Include geocoded coordinates in response
+    result.lng = userLng;
+
+    // Cache the LLM-generated recommendations
+    await cache.set(redis, recsCacheKey, result, CacheTTL.ONBOARDING_RECS);
 
     return NextResponse.json(result);
   } catch (error) {

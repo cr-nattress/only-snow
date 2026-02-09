@@ -11,7 +11,10 @@ import type { UserPersona, PassType } from '@/data/types';
 
 export interface StoredPreferences {
   location: string;
+  lat?: number; // Geocoded latitude from onboarding
+  lng?: number; // Geocoded longitude from onboarding
   passType: string; // epic | ikon | indy | multi | none
+  homeMountain?: string; // User's home/primary resort name
   driveRadius: number;
   chaseWillingness: string; // anywhere | driving | no
   persona: string; // legacy persona ID
@@ -23,6 +26,8 @@ const STORAGE_KEY = 'onlysnow_preferences';
 
 const DEFAULTS: StoredPreferences = {
   location: '',
+  lat: undefined,
+  lng: undefined,
   passType: '',
   driveRadius: 120,
   chaseWillingness: '',

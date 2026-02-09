@@ -201,21 +201,44 @@ function regionSeverityToStormSeverity(
   return map[severity] ?? 'quiet';
 }
 
+/** Format drive time in minutes to a human-readable string */
+export function formatDriveTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.round(minutes % 60);
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+}
+
 export function toChaseRegions(regions: RegionSummary[]): ChaseRegion[] {
-  return regions.map((r) => ({
-    id: String(r.id),
-    name: r.name,
-    severity: regionSeverityToStormSeverity(r.stormSeverity),
-    forecastTotal: r.totalSnowfall5Day > 0 ? `${Math.round(r.totalSnowfall5Day)}"` : '0"',
-    dates: '', // Backend regions don't carry date ranges
-    resorts: r.bestResort ? [r.bestResort.name] : [],
-    description: r.bestResort
-      ? `Best: ${r.bestResort.name} (${Math.round(r.bestResort.snowfall5Day)}" in 5 days)`
-      : `${r.resortCount} resorts`,
-    bestAirport: r.bestAirport ?? undefined,
-    lat: r.lat,
-    lng: r.lng,
-  }));
+  return regions.map((r) => {
+    const driveMinutes = r.driveMinutes ?? null;
+    const driveDisplay = driveMinutes != null ? formatDriveTime(driveMinutes) : undefined;
+    const driveHours = driveMinutes != null ? driveMinutes / 60 : null;
+    // Chase score: snowfall / (driveHours + 1) — only meaningful with drive data
+    const chaseScore =
+      driveHours != null && r.totalSnowfall5Day > 0
+        ? r.totalSnowfall5Day / (driveHours + 1)
+        : undefined;
+
+    return {
+      id: String(r.id),
+      name: r.name,
+      severity: regionSeverityToStormSeverity(r.stormSeverity),
+      forecastTotal: r.totalSnowfall5Day > 0 ? `${Math.round(r.totalSnowfall5Day)}"` : '0"',
+      dates: '', // Backend regions don't carry date ranges
+      resorts: r.bestResort ? [r.bestResort.name] : [],
+      description: r.bestResort
+        ? `Best: ${r.bestResort.name} (${Math.round(r.bestResort.snowfall5Day)}" in 5 days)`
+        : `${r.resortCount} resorts`,
+      bestAirport: r.bestAirport ?? undefined,
+      lat: r.lat,
+      lng: r.lng,
+      driveMinutes,
+      driveDisplay,
+      chaseScore,
+    };
+  });
 }
 
 // ── Rankings to ResortConditions ────────────────────────────────────

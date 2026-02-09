@@ -3,7 +3,9 @@ import { withLogging } from '@/lib/api-logger';
 import { eq, sql } from 'drizzle-orm';
 import { chaseRegions, resorts, forecasts } from '@onlysnow/db';
 import type { TripEstimate } from '@onlysnow/types';
+import { CacheKeys, CacheTTL, cache } from '@onlysnow/redis';
 import { getDb } from '@/lib/db';
+import { getRedis } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +39,7 @@ export const GET = withLogging(async function GET(
   }
 
   const db = getDb();
+  const redis = getRedis();
 
   const [region] = await db
     .select()
@@ -47,61 +50,73 @@ export const GET = withLogging(async function GET(
     return NextResponse.json({ error: 'Region not found' }, { status: 404 });
   }
 
-  // Find best resort by upcoming snowfall
-  const today = new Date().toISOString().split('T')[0];
-  const sevenDaysOut = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+  const cacheKey = CacheKeys.chaseTripPlan(regionId);
 
-  const regionResorts = await db
-    .select()
-    .from(resorts)
-    .where(eq(resorts.chaseRegionId, regionId));
+  const estimate = await cache.getOrSet<TripEstimate | null>(
+    redis,
+    cacheKey,
+    CacheTTL.CHASE_TRIP_PLAN,
+    async () => {
+      // Find best resort by upcoming snowfall
+      const today = new Date().toISOString().split('T')[0];
+      const sevenDaysOut = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
 
-  const snowSums = await db
-    .select({
-      resortId: forecasts.resortId,
-      totalSnow: sql<number>`COALESCE(SUM(${forecasts.snowfall}), 0)`.as('total_snow'),
-    })
-    .from(forecasts)
-    .where(sql`${forecasts.date} >= ${today} AND ${forecasts.date} <= ${sevenDaysOut}`)
-    .groupBy(forecasts.resortId);
+      const regionResorts = await db
+        .select()
+        .from(resorts)
+        .where(eq(resorts.chaseRegionId, regionId));
 
-  const snowByResort = new Map(snowSums.map((s) => [s.resortId, s.totalSnow]));
+      const snowSums = await db
+        .select({
+          resortId: forecasts.resortId,
+          totalSnow: sql<number>`COALESCE(SUM(${forecasts.snowfall}), 0)`.as('total_snow'),
+        })
+        .from(forecasts)
+        .where(sql`${forecasts.date} >= ${today} AND ${forecasts.date} <= ${sevenDaysOut}`)
+        .groupBy(forecasts.resortId);
 
-  let bestResort = regionResorts[0];
-  let bestSnow = 0;
-  for (const resort of regionResorts) {
-    const snow = snowByResort.get(resort.id) ?? 0;
-    if (snow > bestSnow) {
-      bestSnow = snow;
-      bestResort = resort;
-    }
-  }
+      const snowByResort = new Map(snowSums.map((s) => [s.resortId, s.totalSnow]));
 
-  if (!bestResort) {
+      let bestResort = regionResorts[0];
+      let bestSnow = 0;
+      for (const resort of regionResorts) {
+        const snow = snowByResort.get(resort.id) ?? 0;
+        if (snow > bestSnow) {
+          bestSnow = snow;
+          bestResort = resort;
+        }
+      }
+
+      if (!bestResort) return null;
+
+      const code = getRegionCode(region.name);
+      const costs = COST_ESTIMATES[code] ?? COST_ESTIMATES['co'];
+      const airport = region.bestAirport ?? 'DEN';
+
+      return {
+        regionId: region.id,
+        regionName: region.name,
+        resortName: bestResort.name,
+        flightEstimate: { lowCents: costs.flight[0], highCents: costs.flight[1] },
+        lodgingEstimate: { lowCents: costs.lodging[0], highCents: costs.lodging[1] },
+        liftTicketCents: costs.lift,
+        totalEstimate: {
+          lowCents: costs.flight[0] + costs.lodging[0] + costs.lift,
+          highCents: costs.flight[1] + costs.lodging[1] + costs.lift,
+        },
+        affiliateLinks: {
+          flights: `https://www.skyscanner.com/transport/flights/?destination=${airport}`,
+          lodging: `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(bestResort.name)}`,
+        },
+      };
+    },
+  );
+
+  if (!estimate) {
     return NextResponse.json({ error: 'No resorts in region' }, { status: 404 });
   }
 
-  const code = getRegionCode(region.name);
-  const costs = COST_ESTIMATES[code] ?? COST_ESTIMATES['co'];
-
-  const airport = region.bestAirport ?? 'DEN';
-
-  const estimate: TripEstimate = {
-    regionId: region.id,
-    regionName: region.name,
-    resortName: bestResort.name,
-    flightEstimate: { lowCents: costs.flight[0], highCents: costs.flight[1] },
-    lodgingEstimate: { lowCents: costs.lodging[0], highCents: costs.lodging[1] },
-    liftTicketCents: costs.lift,
-    totalEstimate: {
-      lowCents: costs.flight[0] + costs.lodging[0] + costs.lift,
-      highCents: costs.flight[1] + costs.lodging[1] + costs.lift,
-    },
-    affiliateLinks: {
-      flights: `https://www.skyscanner.com/transport/flights/?destination=${airport}`,
-      lodging: `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(bestResort.name)}`,
-    },
-  };
-
-  return NextResponse.json(estimate);
+  return NextResponse.json(estimate, {
+    headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=300' },
+  });
 });

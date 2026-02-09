@@ -21,6 +21,7 @@ import { log } from "@/lib/log";
 type Step =
   | "location"
   | "pass"
+  | "homeMountain"
   | "radius"
   | "frequency"
   | "group"
@@ -98,6 +99,9 @@ export default function OnboardingPage() {
   // Basic onboarding state
   const [location, setLocation] = useState("");
   const [pass, setPass] = useState("");
+  const [hasHomeMountain, setHasHomeMountain] = useState<boolean | null>(null);
+  const [homeMountain, setHomeMountain] = useState("");
+  const [homeMountainSearch, setHomeMountainSearch] = useState("");
   const [radius, setRadius] = useState(120);
   const [chase, setChase] = useState("");
 
@@ -119,7 +123,7 @@ export default function OnboardingPage() {
 
   // Calculate step order and progress
   const stepOrder: Step[] = useMemo(() => {
-    const order: Step[] = ["location", "pass", "radius", "frequency", "group"];
+    const order: Step[] = ["location", "pass", "homeMountain", "radius", "frequency", "group"];
     if (group === "family") {
       order.push("childAges");
     }
@@ -229,6 +233,7 @@ export default function OnboardingPage() {
     switch (step) {
       case "location":
       case "pass":
+      case "homeMountain":
       case "radius":
       case "frequency":
       case "chase":
@@ -262,7 +267,10 @@ export default function OnboardingPage() {
         // Persist all onboarding data before navigating
         updatePreferences({
           location,
+          lat: recommendations?.lat, // Save geocoded coordinates from recommendations API
+          lng: recommendations?.lng,
           passType: pass,
+          homeMountain: homeMountain || undefined,
           driveRadius: radius,
           chaseWillingness: chase || "no",
           persona: detectedPersona
@@ -310,10 +318,20 @@ export default function OnboardingPage() {
     );
   }
 
+  // Filtered resorts for home mountain search
+  const filteredResorts = useMemo(() => {
+    if (!homeMountainSearch) return [];
+    const search = homeMountainSearch.toLowerCase();
+    return Object.values(resorts)
+      .filter((r) => r.name.toLowerCase().includes(search))
+      .slice(0, 6);
+  }, [homeMountainSearch]);
+
   const isNextDisabled = () => {
     switch (step) {
       case "location": return !location;
       case "pass": return !pass;
+      case "homeMountain": return hasHomeMountain === null || (hasHomeMountain && !homeMountain);
       case "frequency": return !frequency;
       case "group": return !group;
       case "childAges": return childAges.length === 0;
@@ -410,6 +428,76 @@ export default function OnboardingPage() {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Step 2b: Home Mountain */}
+        {step === "homeMountain" && (
+          <div className="space-y-4">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Do you have a home mountain?</h1>
+              <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
+                The resort you ski most often.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => { log("onboarding.home_mountain", { has: "yes" }); setHasHomeMountain(true); }}
+                className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
+                  hasHomeMountain === true
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                    : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
+                }`}
+              >
+                <div className="text-sm lg:text-base font-medium text-gray-900 dark:text-white">Yes</div>
+                <div className="text-xs text-gray-500 dark:text-slate-400">I have a go-to resort</div>
+              </button>
+              <button
+                onClick={() => { log("onboarding.home_mountain", { has: "no" }); setHasHomeMountain(false); setHomeMountain(""); setHomeMountainSearch(""); }}
+                className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
+                  hasHomeMountain === false
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                    : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
+                }`}
+              >
+                <div className="text-sm lg:text-base font-medium text-gray-900 dark:text-white">No</div>
+                <div className="text-xs text-gray-500 dark:text-slate-400">I go wherever the snow is</div>
+              </button>
+            </div>
+
+            {hasHomeMountain && (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="Search for a resort..."
+                  value={homeMountainSearch}
+                  onChange={(e) => setHomeMountainSearch(e.target.value)}
+                  className="w-full px-4 py-3 text-sm lg:text-base border border-gray-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                  autoFocus
+                />
+                {filteredResorts.length > 0 && (
+                  <div className="space-y-1">
+                    {filteredResorts.map((r) => (
+                      <button
+                        key={r.id}
+                        onClick={() => { log("onboarding.home_mountain_select", { resort: r.name }); setHomeMountain(r.name); setHomeMountainSearch(r.name); }}
+                        className={`w-full text-left px-4 py-2.5 rounded-xl border transition-all ${
+                          homeMountain === r.name
+                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                            : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
+                        }`}
+                      >
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{r.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-slate-400">{r.region} · {r.passType}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {homeMountainSearch && filteredResorts.length === 0 && (
+                  <p className="text-xs text-gray-400 dark:text-slate-500 px-1">No resorts match &ldquo;{homeMountainSearch}&rdquo;</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 

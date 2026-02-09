@@ -55,8 +55,15 @@ export class OnlySnowApiClient {
     return this.request<ForecastResponse>(`/api/resorts/${id}/forecast`);
   }
 
-  async getRegions(): Promise<RegionSummary[]> {
-    return this.request<RegionSummary[]>('/api/regions');
+  async getRegions(filters?: {
+    lat?: number;
+    lng?: number;
+  }): Promise<RegionSummary[]> {
+    const params = new URLSearchParams();
+    if (filters?.lat != null) params.set('lat', String(filters.lat));
+    if (filters?.lng != null) params.set('lng', String(filters.lng));
+    const qs = params.toString();
+    return this.request<RegionSummary[]>(`/api/regions${qs ? `?${qs}` : ''}`);
   }
 
   async getRegionComparison(id: number): Promise<RegionComparison> {

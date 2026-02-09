@@ -118,7 +118,9 @@ export const GET = withLogging(async function GET(request: NextRequest) {
       },
     );
 
-    return NextResponse.json({ narrative });
+    return NextResponse.json({ narrative }, {
+      headers: { 'Cache-Control': 'public, s-maxage=7200, stale-while-revalidate=300' },
+    });
   }
 
   // Dashboard narrative
@@ -161,5 +163,7 @@ export const GET = withLogging(async function GET(request: NextRequest) {
     },
   );
 
-  return NextResponse.json({ narrative });
+  return NextResponse.json({ narrative }, {
+    headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=300' },
+  });
 });

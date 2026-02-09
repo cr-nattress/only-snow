@@ -13,6 +13,12 @@ export const CacheKeys = {
   driveTimes: (originCity: string) => `onlysnow:drive-times:${originCity}`,
   narrativeDashboard: (region: string) => `onlysnow:narrative:dashboard:${region}`,
   narrativeResort: (resortId: number) => `onlysnow:narrative:resort:${resortId}`,
+  chaseTripPlan: (regionId: number) => `onlysnow:chase-trip:${regionId}`,
+  resortsList: (region?: string, passType?: string) =>
+    `onlysnow:resorts-list:${region ?? 'all'}:${passType ?? 'all'}`,
+  geocode: (location: string) => `onlysnow:geocode:${location.toLowerCase().trim()}`,
+  onboardingRecs: (location: string, passType: string, radius: number) =>
+    `onlysnow:onboarding-recs:${location.toLowerCase().trim()}:${passType}:${radius}`,
 } as const;
 
 /** TTL values in seconds */
@@ -28,4 +34,8 @@ export const CacheTTL = {
   DRIVE_TIMES: 7 * 24 * 60 * 60, // 7 days
   NARRATIVE_DASHBOARD: 6 * 60 * 60, // 6 hours (matches forecast refresh)
   NARRATIVE_RESORT: 2 * 60 * 60, // 2 hours (matches conditions refresh)
+  CHASE_TRIP_PLAN: 30 * 60, // 30 minutes (matches chase alerts)
+  RESORTS_LIST: 30 * 60, // 30 minutes (matches conditions refresh)
+  GEOCODE: 30 * 24 * 60 * 60, // 30 days (locations don't move)
+  ONBOARDING_RECS: 30 * 60, // 30 minutes
 } as const;

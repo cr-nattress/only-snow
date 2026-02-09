@@ -92,5 +92,7 @@ export const GET = withLogging(async function GET(
     },
   );
 
-  return NextResponse.json(result);
+  return NextResponse.json(result, {
+    headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600' },
+  });
 });

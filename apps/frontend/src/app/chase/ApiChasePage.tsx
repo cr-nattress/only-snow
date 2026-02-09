@@ -6,13 +6,12 @@ import type { RegionComparisonData } from "@/lib/data-provider";
 import { fetchChasePageData, fetchRegionComparison } from "@/lib/data-provider";
 import type { ChaseRegion, StormSeverity } from "@/data/types";
 import { usePreferences } from "@/context/PreferencesContext";
-import { geocodeLocation } from "@/lib/geocode";
 
 const severityConfig: Partial<Record<StormSeverity, { bg: string; border: string; text: string; label: string; icon: string }>> = {
   quiet: { bg: "bg-gray-50 dark:bg-slate-700", border: "border-gray-200 dark:border-slate-600", text: "text-gray-500 dark:text-slate-400", label: "QUIET", icon: "" },
-  moderate: { bg: "bg-yellow-50 dark:bg-yellow-900/30", border: "border-yellow-200 dark:border-yellow-700", text: "text-yellow-800 dark:text-yellow-300", label: "MODERATE", icon: "🟡" },
-  significant: { bg: "bg-orange-50 dark:bg-orange-900/30", border: "border-orange-200 dark:border-orange-700", text: "text-orange-800 dark:text-orange-300", label: "SIGNIFICANT", icon: "🟠" },
-  chase: { bg: "bg-red-50 dark:bg-red-900/30", border: "border-red-300 dark:border-red-700", text: "text-red-800 dark:text-red-300", label: "MAJOR EVENT", icon: "🔴" },
+  moderate: { bg: "bg-yellow-50 dark:bg-yellow-900/30", border: "border-yellow-200 dark:border-yellow-700", text: "text-yellow-800 dark:text-yellow-300", label: "MODERATE", icon: "" },
+  significant: { bg: "bg-orange-50 dark:bg-orange-900/30", border: "border-orange-200 dark:border-orange-700", text: "text-orange-800 dark:text-orange-300", label: "SIGNIFICANT", icon: "" },
+  chase: { bg: "bg-red-50 dark:bg-red-900/30", border: "border-red-300 dark:border-red-700", text: "text-red-800 dark:text-red-300", label: "MAJOR EVENT", icon: "" },
 };
 
 const defaultSeverityConfig = { bg: "bg-gray-50 dark:bg-slate-700", border: "border-gray-200 dark:border-slate-600", text: "text-gray-500 dark:text-slate-400", label: "UNKNOWN", icon: "" };
@@ -25,42 +24,95 @@ const passBadge: Record<string, { bg: string; text: string; label: string }> = {
 
 type View = "national" | "region";
 
+function RegionCard({ region, onSelect }: { region: ChaseRegion; onSelect: (r: ChaseRegion) => void }) {
+  const config = severityConfig[region.severity] ?? defaultSeverityConfig;
+  return (
+    <button
+      onClick={() => onSelect(region)}
+      className={`w-full text-left rounded-xl border ${config.border} ${config.bg} px-4 md:px-5 lg:px-6 py-3 lg:py-4 transition-all hover:shadow-md`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            {config.icon && <span className="text-sm">{config.icon}</span>}
+            <span className={`text-[10px] lg:text-xs font-bold tracking-wide ${config.text}`}>
+              {config.label}
+            </span>
+            {region.driveDisplay && (
+              <span className="text-[10px] lg:text-xs px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium">
+                {region.driveDisplay} drive
+              </span>
+            )}
+            {!region.driveDisplay && region.bestAirport && (
+              <span className="text-[10px] lg:text-xs px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-slate-300 font-medium">
+                {region.bestAirport}
+              </span>
+            )}
+          </div>
+          <div className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">{region.name}</div>
+          <div className="text-xs lg:text-sm text-gray-600 dark:text-slate-300 mt-0.5">{region.description}</div>
+        </div>
+        <div className="text-right shrink-0 ml-4">
+          <div className={`text-sm lg:text-base font-bold ${region.severity !== "quiet" ? "text-blue-600" : "text-gray-400"}`}>
+            {region.forecastTotal}
+          </div>
+          {region.chaseScore != null && region.chaseScore > 0 && (
+            <div className="text-[10px] lg:text-xs text-gray-500 dark:text-slate-400">
+              score {region.chaseScore.toFixed(1)}
+            </div>
+          )}
+          {region.dates && (
+            <div className="text-[10px] lg:text-xs text-gray-500 dark:text-slate-400">{region.dates}</div>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
 export default function ApiChasePage() {
   const { preferences } = usePreferences();
-  const [regions, setRegions] = useState<ChaseRegion[]>([]);
+  const [withinReach, setWithinReach] = useState<ChaseRegion[]>([]);
+  const [worthTheTrip, setWorthTheTrip] = useState<ChaseRegion[]>([]);
+  const [fallbackRegions, setFallbackRegions] = useState<ChaseRegion[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("national");
   const [selectedRegion, setSelectedRegion] = useState<ChaseRegion | null>(null);
   const [comparison, setComparison] = useState<RegionComparisonData | null>(null);
   const [loadingComparison, setLoadingComparison] = useState(false);
 
+  const hasTiers = withinReach.length > 0 || worthTheTrip.length > 0;
+  const isChaseUnwilling = preferences.chaseWillingness === 'no';
+
   const loadData = useCallback(async () => {
     setLoading(true);
 
-    let lat: number | undefined;
-    let lng: number | undefined;
+    const lat = preferences.lat;
+    const lng = preferences.lng;
 
-    if (preferences.location) {
-      const coords = await geocodeLocation(preferences.location);
-      if (coords) {
-        lat = coords.lat;
-        lng = coords.lng;
-      }
+    if (preferences.location && (!lat || !lng)) {
+      console.warn('No coordinates saved for location:', preferences.location, '- showing all regions');
     }
 
-    // 10-hour drive ≈ 600 miles
-    const radiusMiles = 600;
-
     try {
-      const data = await fetchChasePageData({ lat, lng, radiusMiles });
-      setRegions(data.regions);
-    } catch {
+      const data = await fetchChasePageData({
+        lat,
+        lng,
+        chaseWillingness: preferences.chaseWillingness,
+      });
+      setWithinReach(data.withinReach);
+      setWorthTheTrip(data.worthTheTrip);
+      setFallbackRegions(data.regions);
+    } catch (error) {
+      console.error('Failed to load chase page data:', error);
       const data = await fetchChasePageData();
-      setRegions(data.regions);
+      setFallbackRegions(data.regions);
+      setWithinReach([]);
+      setWorthTheTrip([]);
     } finally {
       setLoading(false);
     }
-  }, [preferences.location]);
+  }, [preferences.location, preferences.lat, preferences.lng, preferences.chaseWillingness]);
 
   useEffect(() => {
     loadData();
@@ -76,6 +128,11 @@ export default function ApiChasePage() {
         .finally(() => setLoadingComparison(false));
     }
   }, [view, selectedRegion]);
+
+  const handleSelectRegion = (r: ChaseRegion) => {
+    setSelectedRegion(r);
+    setView("region");
+  };
 
   if (loading) {
     return (
@@ -95,14 +152,14 @@ export default function ApiChasePage() {
         <div className="flex items-center gap-3">
           {view === "national" ? (
             <Link href="/dashboard" className="text-white/70 hover:text-white">
-              ←
+              &larr;
             </Link>
           ) : (
             <button
               onClick={() => setView("national")}
               className="text-white/70 hover:text-white"
             >
-              ←
+              &larr;
             </button>
           )}
           <div>
@@ -120,52 +177,77 @@ export default function ApiChasePage() {
         </div>
       </div>
 
+      {/* Chase Unwilling Prompt */}
+      {view === "national" && isChaseUnwilling && (
+        <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 px-4 md:px-5 lg:px-6 py-6 text-center">
+            <p className="text-sm text-gray-600 dark:text-slate-300 mb-2">
+              Storm chasing is disabled in your settings.
+            </p>
+            <Link
+              href="/settings"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            >
+              Update chase preferences
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* National View */}
-      {view === "national" && (
+      {view === "national" && !isChaseUnwilling && (
         <div className="px-4 md:px-6 lg:px-8 py-3 lg:py-4 space-y-3 lg:space-y-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 px-4 md:px-5 lg:px-6 py-3">
             <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-slate-400 mb-1">
-              NEXT 10 DAYS — WHERE&apos;S THE SNOW?
+              NEXT 10 DAYS &mdash; WHERE&apos;S THE SNOW?
             </h3>
             <p className="text-[10px] lg:text-xs text-gray-400 dark:text-slate-500">Tap a region for resort-level detail</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
-            {regions.map((r) => {
-              const config = severityConfig[r.severity] ?? defaultSeverityConfig;
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => {
-                    setSelectedRegion(r);
-                    setView("region");
-                  }}
-                  className={`w-full text-left rounded-xl border ${config.border} ${config.bg} px-4 md:px-5 lg:px-6 py-3 lg:py-4 transition-all hover:shadow-md`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        {config.icon && <span className="text-sm">{config.icon}</span>}
-                        <span className={`text-[10px] lg:text-xs font-bold tracking-wide ${config.text}`}>
-                          {config.label}
-                        </span>
-                      </div>
-                      <div className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">{r.name}</div>
-                      <div className="text-xs lg:text-sm text-gray-600 dark:text-slate-300 mt-0.5">{r.description}</div>
-                    </div>
-                    <div className="text-right shrink-0 ml-4">
-                      <div className={`text-sm lg:text-base font-bold ${r.severity !== "quiet" ? "text-blue-600" : "text-gray-400"}`}>
-                        {r.forecastTotal}
-                      </div>
-                      {r.dates && (
-                        <div className="text-[10px] lg:text-xs text-gray-500 dark:text-slate-400">{r.dates}</div>
-                      )}
-                    </div>
+          {hasTiers ? (
+            <>
+              {/* Tier 1: Within Reach */}
+              {withinReach.length > 0 && (
+                <div className="space-y-2 lg:space-y-3">
+                  <h3 className="text-xs lg:text-sm font-bold tracking-wide text-white/80 px-1">
+                    WITHIN REACH
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+                    {withinReach.map((r) => (
+                      <RegionCard key={r.id} region={r} onSelect={handleSelectRegion} />
+                    ))}
                   </div>
-                </button>
-              );
-            })}
-          </div>
+                </div>
+              )}
+
+              {/* Tier 2: Worth the Trip */}
+              {worthTheTrip.length > 0 && (
+                <div className="space-y-2 lg:space-y-3">
+                  <h3 className="text-xs lg:text-sm font-bold tracking-wide text-white/80 px-1">
+                    WORTH THE TRIP
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+                    {worthTheTrip.map((r) => (
+                      <RegionCard key={r.id} region={r} onSelect={handleSelectRegion} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {withinReach.length === 0 && worthTheTrip.length === 0 && (
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 px-4 md:px-5 lg:px-6 py-8 text-center">
+                  <p className="text-sm text-gray-500 dark:text-slate-400">No significant storms in the forecast.</p>
+                </div>
+              )}
+            </>
+          ) : (
+            /* Fallback: flat list when no drive data available */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+              {fallbackRegions.map((r) => (
+                <RegionCard key={r.id} region={r} onSelect={handleSelectRegion} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -179,6 +261,11 @@ export default function ApiChasePage() {
               <span className={`text-xs lg:text-sm font-bold ${(severityConfig[selectedRegion.severity] ?? defaultSeverityConfig).text}`}>
                 {selectedRegion.forecastTotal} FORECAST
               </span>
+              {selectedRegion.driveDisplay && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium">
+                  {selectedRegion.driveDisplay} drive
+                </span>
+              )}
             </div>
             <p className="text-xs lg:text-sm text-gray-700 dark:text-slate-300">{selectedRegion.description}</p>
           </div>
@@ -204,7 +291,7 @@ export default function ApiChasePage() {
                   return (
                     <div key={r.name} className="px-4 md:px-5 lg:px-6 py-2.5 lg:py-3 flex items-center gap-3">
                       <span className="text-sm lg:text-base w-5 text-center">
-                        {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : ""}
+                        {i === 0 ? "\u{1F947}" : i === 1 ? "\u{1F948}" : i === 2 ? "\u{1F949}" : ""}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">

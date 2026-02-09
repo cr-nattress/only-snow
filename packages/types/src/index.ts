@@ -113,6 +113,7 @@ export interface RegionSummary {
     snowfall5Day: number;
   } | null;
   stormSeverity: 'none' | 'light' | 'moderate' | 'heavy' | 'epic';
+  driveMinutes?: number | null;
 }
 
 export interface RegionComparison {
@@ -259,6 +260,8 @@ export interface OnboardingRecommendationResponse {
   recommendations: OnboardingRecommendation[];
   summary: string;
   totalMatching: number;
+  lat?: number; // Geocoded latitude for the user's location
+  lng?: number; // Geocoded longitude for the user's location
 }
 
 // API Query Parameters
