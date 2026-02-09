@@ -15,6 +15,7 @@ import { RESORT_TO_LIFTIE } from './liftie-mapping.js';
 import { fetchLiftieConditions } from './index.js';
 import { fetchTrailConditions, RESORT_TO_TERRAIN_URL } from './vail-resorts-scraper.js';
 import { fetchObservedSnowfall } from './open-meteo-observed.js';
+import { syncSnowReports } from './sync-snow-reports.js';
 
 async function main() {
   const startTime = Date.now();
@@ -140,6 +141,10 @@ async function main() {
     }
   }
 
+  // Sync scraped data (baseDepth, summitDepth, surfaceCondition) from snow_reports
+  console.log('\n--- Syncing scraped data (snow_reports → resort_conditions) ---');
+  const syncResult = await syncSnowReports(db, redis, { invalidate: cache.invalidate, keys: CacheKeys });
+
   const durationMs = Date.now() - startTime;
   const durationSec = (durationMs / 1000).toFixed(1);
 
@@ -147,6 +152,7 @@ async function main() {
   console.log(`Snowfall updates:   ${snowfallUpdates}`);
   console.log(`Lift updates:       ${liftUpdates}`);
   console.log(`Trail updates:      ${trailUpdates}`);
+  console.log(`Scraped sync:       ${syncResult.synced} (${syncResult.skipped} skipped)`);
   console.log(`Errors:             ${errors}`);
   console.log(`Duration:           ${durationSec}s`);
 

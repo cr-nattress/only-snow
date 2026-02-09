@@ -68,6 +68,7 @@ http('forecastRefresh', async (req, res) => {
                 tempLow: day.tempLow,
                 windSpeed: day.windSpeed,
                 cloudCover: day.cloudCover,
+                precipProbability: day.precipProbability,
                 conditions: day.conditions,
                 confidence: day.confidence,
                 freezingLevel: day.freezingLevel,

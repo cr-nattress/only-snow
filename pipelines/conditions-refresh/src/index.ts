@@ -7,6 +7,7 @@ import { tryCreateRedisClient, CacheKeys, cache } from '@onlysnow/redis';
 import { RESORT_TO_LIFTIE } from './liftie-mapping.js';
 import { fetchTrailConditions, RESORT_TO_TERRAIN_URL } from './vail-resorts-scraper.js';
 import { fetchObservedSnowfall } from './open-meteo-observed.js';
+import { syncSnowReports } from './sync-snow-reports.js';
 
 const log = logger;
 
@@ -184,8 +185,12 @@ http('conditionsRefresh', async (req, res) => {
     await new Promise((r) => setTimeout(r, 200));
   }
 
-  const duration = Date.now() - startTime;
-  log.info('Conditions refresh complete', { snowfallUpdates, liftUpdates, trailUpdates, errors, durationMs: duration });
+  // Sync scraped data (baseDepth, summitDepth, surfaceCondition) from snow_reports
+  const syncResult = await syncSnowReports(db, redis, { invalidate: cache.invalidate, keys: CacheKeys });
+  log.info('Snow reports sync', { synced: syncResult.synced, skipped: syncResult.skipped });
 
-  res.json({ snowfallUpdates, liftUpdates, trailUpdates, errors, durationMs: duration });
+  const duration = Date.now() - startTime;
+  log.info('Conditions refresh complete', { snowfallUpdates, liftUpdates, trailUpdates, errors, syncedFromScraper: syncResult.synced, durationMs: duration });
+
+  res.json({ snowfallUpdates, liftUpdates, trailUpdates, errors, syncedFromScraper: syncResult.synced, durationMs: duration });
 });

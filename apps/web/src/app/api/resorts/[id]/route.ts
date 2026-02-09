@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withLogging } from '@/lib/api-logger';
-import { eq, gte, sql } from 'drizzle-orm';
+import { eq, sql, like, desc } from 'drizzle-orm';
 import {
   resorts,
   resortConditions,
@@ -99,20 +99,44 @@ export const GET = withLogging(async function GET(
         }
       }
 
-      // Fetch avalanche info (simplified — real impl would match by resort's region/location)
-      let avalanche = null;
-      const [zone] = await db
-        .select()
-        .from(avalancheZones)
-        .limit(1);
+      // Match avalanche zone by resort region → avalanche center
+      const REGION_TO_AVAL_CENTER: Record<string, string> = {
+        'i70-corridor': 'CAIC',
+        'front-range': 'CAIC',
+        'steamboat-area': 'CAIC',
+        'aspen-area': 'CAIC',
+        'san-juans': 'CAIC',
+        'salt-lake-cottonwoods': 'UAC',
+        'park-city-area': 'UAC',
+        'ogden-area': 'UAC',
+        'big-sky-area': 'GNFAC',
+        'jackson-hole-area': 'BTAC',
+        'taos-area': 'TAOS',
+      };
 
-      if (zone) {
-        avalanche = {
-          zoneName: zone.name,
-          dangerRating: (zone.dangerRating as 'low' | 'moderate' | 'considerable' | 'high' | 'extreme') ?? 'low',
-          forecastUrl: zone.forecastUrl,
-          updatedAt: zone.updatedAt.toISOString(),
-        };
+      let avalanche = null;
+      const centerCode = REGION_TO_AVAL_CENTER[resortRow.resort.region];
+      if (centerCode) {
+        const zones = await db
+          .select()
+          .from(avalancheZones)
+          .where(like(avalancheZones.zoneId, `${centerCode}-%`))
+          .orderBy(desc(avalancheZones.updatedAt));
+
+        // Pick the zone with the highest danger rating, or first if tied
+        const dangerOrder = ['extreme', 'high', 'considerable', 'moderate', 'low'];
+        const bestZone = zones.sort(
+          (a, b) => dangerOrder.indexOf(a.dangerRating ?? 'low') - dangerOrder.indexOf(b.dangerRating ?? 'low'),
+        )[0];
+
+        if (bestZone) {
+          avalanche = {
+            zoneName: bestZone.name,
+            dangerRating: (bestZone.dangerRating as 'low' | 'moderate' | 'considerable' | 'high' | 'extreme') ?? 'low',
+            forecastUrl: bestZone.forecastUrl,
+            updatedAt: bestZone.updatedAt.toISOString(),
+          };
+        }
       }
 
       const freshness: Freshness = {
