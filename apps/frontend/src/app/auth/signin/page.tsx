@@ -62,16 +62,6 @@ function SignInContent() {
           </button>
         </div>
 
-        {/* Skip option */}
-        <div className="mt-6 text-center">
-          <a
-            href="/dashboard"
-            className="text-sm text-blue-100 hover:text-white transition-colors"
-          >
-            Skip for now →
-          </a>
-        </div>
-
         {/* Terms */}
         <p className="mt-8 text-center text-[10px] text-blue-200">
           By signing in, you agree to our Terms of Service and Privacy Policy.
