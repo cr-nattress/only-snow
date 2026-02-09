@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withLogging } from '@/lib/api-logger';
-import { eq, sql } from 'drizzle-orm';
-import { resorts, resortConditions } from '@onlysnow/db';
+import { eq, desc } from 'drizzle-orm';
+import { resorts, resortConditions, snowReports } from '@onlysnow/db';
 import type { OnboardingRecommendationResponse } from '@onlysnow/types';
 import { CacheKeys, CacheTTL, cache } from '@onlysnow/redis';
 import Anthropic from '@anthropic-ai/sdk';
@@ -90,33 +90,32 @@ export const POST = withLogging(async function POST(request: NextRequest) {
       .from(resorts)
       .leftJoin(resortConditions, eq(resorts.id, resortConditions.resortId));
 
-    // Also try to get snow_reports data (from scraper pipeline, not in Drizzle schema)
-    let snowReports: Record<number, { snowfall24h: number | null; baseDepth: number | null; liftsOpen: number | null; runsOpen: number | null; surface: string | null }> = {};
+    // Get snow_reports data (from scraper pipeline) — latest report per resort
+    let snowReportsMap: Record<number, { snowfall24h: number | null; baseDepth: number | null; liftsOpen: number | null; runsOpen: number | null; surface: string | null }> = {};
     try {
-      const snowRows = await db.execute(sql`
-        SELECT DISTINCT ON (resort_id)
-          resort_id,
-          snowfall_24h_cm,
-          depth_base_cm,
-          lifts_open,
-          runs_open,
-          surface_description
-        FROM snow_reports
-        ORDER BY resort_id, report_date DESC, updated_at DESC
-      `);
+      const snowRows = await db
+        .selectDistinctOn([snowReports.resortId], {
+          resortId: snowReports.resortId,
+          snowfall24hCm: snowReports.snowfall24hCm,
+          depthBaseCm: snowReports.depthBaseCm,
+          liftsOpen: snowReports.liftsOpen,
+          runsOpen: snowReports.runsOpen,
+          surfaceDescription: snowReports.surfaceDescription,
+        })
+        .from(snowReports)
+        .orderBy(snowReports.resortId, desc(snowReports.reportDate), desc(snowReports.updatedAt));
+
       for (const row of snowRows) {
-        const r = row as Record<string, unknown>;
-        const resortId = r.resort_id as number;
-        snowReports[resortId] = {
-          snowfall24h: r.snowfall_24h_cm != null ? Math.round((r.snowfall_24h_cm as number) / 2.54) : null,
-          baseDepth: r.depth_base_cm != null ? Math.round((r.depth_base_cm as number) / 2.54) : null,
-          liftsOpen: r.lifts_open as number | null,
-          runsOpen: r.runs_open as number | null,
-          surface: r.surface_description as string | null,
+        snowReportsMap[row.resortId] = {
+          snowfall24h: row.snowfall24hCm != null ? Math.round(row.snowfall24hCm / 2.54) : null,
+          baseDepth: row.depthBaseCm != null ? Math.round(row.depthBaseCm / 2.54) : null,
+          liftsOpen: row.liftsOpen,
+          runsOpen: row.runsOpen,
+          surface: row.surfaceDescription,
         };
       }
     } catch {
-      // snow_reports table may not exist — that's ok, fall back to resort_conditions
+      // snow_reports table may not have data yet — fall back to resort_conditions
     }
 
     // Convert drive minutes to approximate miles (1 min ≈ 1 mile on highways)
@@ -146,7 +145,7 @@ export const POST = withLogging(async function POST(request: NextRequest) {
 
     // Build resort data for the LLM
     const resortData = filtered.map((row) => {
-      const snow = snowReports[row.resort.id];
+      const snow = snowReportsMap[row.resort.id];
       const cond = row.conditions;
       return {
         name: row.resort.name,

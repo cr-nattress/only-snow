@@ -6,6 +6,7 @@ import { logger } from '@onlysnow/pipeline-core';
 import { tryCreateRedisClient, CacheKeys, cache } from '@onlysnow/redis';
 import { RESORT_TO_LIFTIE } from './liftie-mapping.js';
 import { fetchTrailConditions, RESORT_TO_TERRAIN_URL } from './vail-resorts-scraper.js';
+import { fetchObservedSnowfall } from './open-meteo-observed.js';
 
 const log = logger;
 
@@ -105,45 +106,50 @@ http('conditionsRefresh', async (req, res) => {
   const allResorts = await db.select().from(resorts);
   log.info(`Processing ${allResorts.length} resorts`);
 
+  let snowfallUpdates = 0;
   let liftUpdates = 0;
   let trailUpdates = 0;
-  let skipped = 0;
   let errors = 0;
 
   for (const resort of allResorts) {
     const liftieSlug = RESORT_TO_LIFTIE[resort.slug];
     const hasTrailScraper = resort.slug in RESORT_TO_TERRAIN_URL;
 
-    if (!liftieSlug && !hasTrailScraper) {
-      skipped++;
-      continue;
-    }
+    // Fetch all data sources in parallel
+    const [snowData, liftData, trailData] = await Promise.all([
+      fetchObservedSnowfall(resort.lat, resort.lng, resort.elevationSummit),
+      liftieSlug ? fetchLiftieConditions(liftieSlug) : Promise.resolve(null),
+      hasTrailScraper ? fetchTrailConditions(resort.slug) : Promise.resolve(null),
+    ]);
 
-    // Fetch lift data from Liftie
-    const liftData = liftieSlug ? await fetchLiftieConditions(liftieSlug) : null;
-
-    // Fetch trail data from Vail Resorts scraper
-    const trailData = hasTrailScraper ? await fetchTrailConditions(resort.slug) : null;
-
-    if (!liftData && !trailData) {
+    if (!snowData && !liftData && !trailData) {
       errors++;
       continue;
     }
 
     // Build the upsert payload with only the fields we have data for
     const conditionValues: Record<string, unknown> = {
-      source: 'liftie+scraper',
       updatedAt: new Date(),
     };
+
+    if (snowData) {
+      conditionValues.snowfall24h = snowData.snowfall24h;
+      conditionValues.snowfall48h = snowData.snowfall48h;
+      conditionValues.snowfall72h = snowData.snowfall72h;
+      conditionValues.source = 'open-meteo';
+      snowfallUpdates++;
+    }
 
     if (liftData) {
       conditionValues.liftsOpen = liftData.liftsOpen;
       conditionValues.resortStatus = liftData.resortStatus;
+      conditionValues.source = snowData ? 'open-meteo+liftie' : 'liftie';
       liftUpdates++;
     }
 
     if (trailData) {
       conditionValues.trailsOpen = trailData.trailsOpen;
+      conditionValues.source = (conditionValues.source || '') + '+scraper';
       trailUpdates++;
     }
 
@@ -174,12 +180,12 @@ http('conditionsRefresh', async (req, res) => {
     await cache.invalidate(redis, CacheKeys.conditions(resort.id));
     await cache.invalidate(redis, CacheKeys.resortDetail(resort.id));
 
-    // Rate-limit: 100ms between requests
-    await new Promise((r) => setTimeout(r, 100));
+    // Rate-limit: 200ms between resorts (Open-Meteo allows 600/min)
+    await new Promise((r) => setTimeout(r, 200));
   }
 
   const duration = Date.now() - startTime;
-  log.info('Conditions refresh complete', { liftUpdates, trailUpdates, skipped, errors, durationMs: duration });
+  log.info('Conditions refresh complete', { snowfallUpdates, liftUpdates, trailUpdates, errors, durationMs: duration });
 
-  res.json({ liftUpdates, trailUpdates, skipped, errors, durationMs: duration });
+  res.json({ snowfallUpdates, liftUpdates, trailUpdates, errors, durationMs: duration });
 });

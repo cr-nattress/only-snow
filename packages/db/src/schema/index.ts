@@ -8,3 +8,4 @@ export { avalancheZones } from './avalanche-zones.js';
 export { users } from './users.js';
 export { savedTrips } from './saved-trips.js';
 export { driveTimes } from './drive-times.js';
+export { snowReports } from './snow-reports.js';
