@@ -260,7 +260,7 @@ export default function SettingsPage() {
                         }}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
                           pass === p.id
-                            ? "border-blue-500 bg-blue-50"
+                            ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                             : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:border-slate-600"
                         }`}
                       >
@@ -331,7 +331,7 @@ export default function SettingsPage() {
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
                           effectivePersonaType === p.id
-                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                            ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                             : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                         }`}
                       >
@@ -442,7 +442,7 @@ export default function SettingsPage() {
                       onClick={() => { log("settings.chase_willingness", { value: opt.value }); setChaseWillingness(opt.value); updatePreferences({ chaseWillingness: opt.value }); flashSaved(); }}
                       className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
                         chaseWillingness === opt.value
-                          ? "border-blue-500 bg-blue-50"
+                          ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                           : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:border-slate-600"
                       }`}
                     >

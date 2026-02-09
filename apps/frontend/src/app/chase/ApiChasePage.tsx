@@ -6,6 +6,7 @@ import type { RegionComparisonData } from "@/lib/data-provider";
 import { fetchChasePageData, fetchRegionComparison } from "@/lib/data-provider";
 import type { ChaseRegion, StormSeverity } from "@/data/types";
 import { usePreferences } from "@/context/PreferencesContext";
+import { useLoadingTimeout } from "@/hooks/useLoadingTimeout";
 
 const severityConfig: Partial<Record<StormSeverity, { bg: string; border: string; text: string; label: string; icon: string }>> = {
   quiet: { bg: "bg-gray-50 dark:bg-slate-700", border: "border-gray-200 dark:border-slate-600", text: "text-gray-500 dark:text-slate-400", label: "QUIET", icon: "" },
@@ -76,6 +77,8 @@ export default function ApiChasePage() {
   const [worthTheTrip, setWorthTheTrip] = useState<ChaseRegion[]>([]);
   const [fallbackRegions, setFallbackRegions] = useState<ChaseRegion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const { isTimedOut } = useLoadingTimeout(loading);
   const [view, setView] = useState<View>("national");
   const [selectedRegion, setSelectedRegion] = useState<ChaseRegion | null>(null);
   const [comparison, setComparison] = useState<RegionComparisonData | null>(null);
@@ -86,6 +89,7 @@ export default function ApiChasePage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setError(false);
 
     const lat = preferences.lat;
     const lng = preferences.lng;
@@ -103,12 +107,16 @@ export default function ApiChasePage() {
       setWithinReach(data.withinReach);
       setWorthTheTrip(data.worthTheTrip);
       setFallbackRegions(data.regions);
-    } catch (error) {
-      console.error('Failed to load chase page data:', error);
-      const data = await fetchChasePageData();
-      setFallbackRegions(data.regions);
-      setWithinReach([]);
-      setWorthTheTrip([]);
+    } catch (err) {
+      console.error('Failed to load chase page data:', err);
+      try {
+        const data = await fetchChasePageData();
+        setFallbackRegions(data.regions);
+        setWithinReach([]);
+        setWorthTheTrip([]);
+      } catch {
+        setError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -133,6 +141,24 @@ export default function ApiChasePage() {
     setSelectedRegion(r);
     setView("region");
   };
+
+  if (error || (loading && isTimedOut)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-center px-6">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            Having trouble loading storm data. Check your connection or try again.
+          </p>
+          <button
+            onClick={loadData}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -212,7 +238,7 @@ export default function ApiChasePage() {
                   <h3 className="text-xs lg:text-sm font-bold tracking-wide text-white/80 px-1">
                     WITHIN REACH
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-3">
                     {withinReach.map((r) => (
                       <RegionCard key={r.id} region={r} onSelect={handleSelectRegion} />
                     ))}
@@ -226,7 +252,7 @@ export default function ApiChasePage() {
                   <h3 className="text-xs lg:text-sm font-bold tracking-wide text-white/80 px-1">
                     WORTH THE TRIP
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-3">
                     {worthTheTrip.map((r) => (
                       <RegionCard key={r.id} region={r} onSelect={handleSelectRegion} />
                     ))}
@@ -242,7 +268,7 @@ export default function ApiChasePage() {
             </>
           ) : (
             /* Fallback: flat list when no drive data available */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-3">
               {fallbackRegions.map((r) => (
                 <RegionCard key={r.id} region={r} onSelect={handleSelectRegion} />
               ))}

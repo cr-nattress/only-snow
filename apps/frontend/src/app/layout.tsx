@@ -29,7 +29,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-blue-400 dark:bg-slate-900 antialiased transition-colors duration-300">
         <Providers>
           <PageViewTracker />
-          <div className="mx-auto max-w-md md:max-w-2xl lg:max-w-5xl">
+          <div className="mx-auto max-w-md md:max-w-2xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl">
             <Header />
             <main className="page-transition pb-20 lg:pb-0">
               {children}

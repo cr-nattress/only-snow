@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { usePersona } from "@/context/PersonaContext";
 import { usePreferences } from "@/context/PreferencesContext";
@@ -14,7 +14,6 @@ import {
   OnboardingSignals,
   UserPersona,
 } from "@/data/types";
-import type { OnboardingRecommendationResponse } from "@onlysnow/types";
 import { classifyPersona, getClassificationReason } from "@/lib/personaClassifier";
 import { log } from "@/lib/log";
 
@@ -29,8 +28,7 @@ type Step =
   | "chase"
   | "triggers"
   | "experience"
-  | "personaConfirm"
-  | "confirm";
+  | "personaConfirm";
 
 const passes = [
   { id: "epic", label: "Epic", color: "bg-indigo-600" },
@@ -87,8 +85,8 @@ const childAgeOptions = [
   { value: 17, label: "16+", description: "Keeping up with adults" },
 ];
 
-import { API_BASE_URL, isApiMode } from "@/lib/api-config";
 import { resorts } from "@/data/resorts";
+import { geocodeLocation } from "@/lib/geocode";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -116,10 +114,9 @@ export default function OnboardingPage() {
   const [detectedPersona, setDetectedPersona] = useState<UserPersona | null>(null);
   const [showPersonaOverride, setShowPersonaOverride] = useState(false);
 
-  // Recommendation state
-  const [recommendations, setRecommendations] = useState<OnboardingRecommendationResponse | null>(null);
-  const [loadingRecs, setLoadingRecs] = useState(false);
-  const [recsError, setRecsError] = useState(false);
+  // Geocoded coordinates (resolved when leaving location step)
+  const [geocodedLat, setGeocodedLat] = useState<number | undefined>();
+  const [geocodedLng, setGeocodedLng] = useState<number | undefined>();
 
   // Calculate step order and progress
   const stepOrder: Step[] = useMemo(() => {
@@ -130,71 +127,23 @@ export default function OnboardingPage() {
     if (pass !== "none") {
       order.push("chase");
     }
-    order.push("triggers", "experience", "personaConfirm", "confirm");
+    order.push("triggers", "experience", "personaConfirm");
     return order;
   }, [pass, group]);
 
   const stepIndex = stepOrder.indexOf(step);
-  const totalSteps = stepOrder.filter((s) => s !== "confirm").length;
+  const totalSteps = stepOrder.length;
 
-  // Fetch recommendations when entering the confirm step
-  const fetchRecommendations = useCallback(async () => {
-    setLoadingRecs(true);
-    setRecsError(false);
-    try {
-      if (!isApiMode()) {
-        // Mock mode: build recommendations from local resort data
-        const passMatches = (resortPass: string, userPass: string) => {
-          if (userPass === "multi" || userPass === "none") return true;
-          return resortPass === userPass || resortPass === "independent";
-        };
-        const matching = Object.values(resorts).filter((r) => passMatches(r.passType, pass));
-        const top = matching.slice(0, 5);
-        const passLabel = pass !== "none" && pass !== "multi"
-          ? `${pass.charAt(0).toUpperCase() + pass.slice(1)} pass `
-          : "";
-        setRecommendations({
-          recommendations: top.map((r) => ({
-            name: r.name,
-            slug: r.id,
-            passType: r.passType,
-            reason: `${r.driveTime} from ${location}. ${r.region}.`,
-            currentConditions: "Check back for live conditions",
-          })),
-          summary: `We found ${matching.length} ${passLabel}resorts within driving distance of ${location}.`,
-          totalMatching: matching.length,
-        });
-      } else {
-        const res = await fetch(`${API_BASE_URL}/api/onboarding/recommendations`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location,
-            passType: pass,
-            driveRadius: radius,
-            persona: detectedPersona?.primary ?? "core-local",
-            experience,
-            frequency,
-            groupType: group,
-            triggers,
-          }),
-        });
-        if (!res.ok) throw new Error("API error");
-        const data: OnboardingRecommendationResponse = await res.json();
-        setRecommendations(data);
-      }
-    } catch {
-      setRecsError(true);
-    } finally {
-      setLoadingRecs(false);
-    }
-  }, [location, pass, radius, detectedPersona, experience, frequency, group, triggers]);
-
+  // Geocode when location is entered (fire-and-forget, non-blocking)
   useEffect(() => {
-    if (step === "confirm") {
-      fetchRecommendations();
-    }
-  }, [step, fetchRecommendations]);
+    if (!location) return;
+    geocodeLocation(location).then((coords) => {
+      if (coords) {
+        setGeocodedLat(coords.lat);
+        setGeocodedLng(coords.lng);
+      }
+    });
+  }, [location]);
 
   function classifyAndContinue() {
     if (!frequency || !group || !experience || triggers.length === 0) return;
@@ -261,14 +210,11 @@ export default function OnboardingPage() {
         if (detectedPersona) {
           setUserPersona(detectedPersona);
         }
-        setStep("confirm");
-        break;
-      case "confirm":
-        // Persist all onboarding data before navigating
+        // Persist all onboarding data and go to dashboard
         updatePreferences({
           location,
-          lat: recommendations?.lat, // Save geocoded coordinates from recommendations API
-          lng: recommendations?.lng,
+          lat: geocodedLat,
+          lng: geocodedLng,
           passType: pass,
           homeMountain: homeMountain || undefined,
           driveRadius: radius,
@@ -417,7 +363,7 @@ export default function OnboardingPage() {
                   onClick={() => { log("onboarding.pass_select", { passType: p.id }); setPass(p.id); }}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${
                     pass === p.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm"
+                      ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                   }`}
                 >
@@ -445,7 +391,7 @@ export default function OnboardingPage() {
                 onClick={() => { log("onboarding.home_mountain", { has: "yes" }); setHasHomeMountain(true); }}
                 className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
                   hasHomeMountain === true
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                    ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                     : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                 }`}
               >
@@ -456,7 +402,7 @@ export default function OnboardingPage() {
                 onClick={() => { log("onboarding.home_mountain", { has: "no" }); setHasHomeMountain(false); setHomeMountain(""); setHomeMountainSearch(""); }}
                 className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
                   hasHomeMountain === false
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                    ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                     : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                 }`}
               >
@@ -483,7 +429,7 @@ export default function OnboardingPage() {
                         onClick={() => { log("onboarding.home_mountain_select", { resort: r.name }); setHomeMountain(r.name); setHomeMountainSearch(r.name); }}
                         className={`w-full text-left px-4 py-2.5 rounded-xl border transition-all ${
                           homeMountain === r.name
-                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                            ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                             : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                         }`}
                       >
@@ -517,7 +463,7 @@ export default function OnboardingPage() {
                   onClick={() => { log("onboarding.radius_select", { radius: String(opt.value) }); setRadius(opt.value); }}
                   className={`w-full flex items-center justify-between px-5 py-3 rounded-xl border-2 transition-all ${
                     radius === opt.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                      ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                   }`}
                 >
@@ -549,7 +495,7 @@ export default function OnboardingPage() {
                   onClick={() => { log("onboarding.frequency_select", { frequency: opt.value }); setFrequency(opt.value); }}
                   className={`w-full text-left px-5 py-3 rounded-xl border-2 transition-all ${
                     frequency === opt.value && (opt.days !== 30 || frequencyOptions.findIndex((o) => o.value === frequency) === idx)
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                      ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                   }`}
                 >
@@ -577,7 +523,7 @@ export default function OnboardingPage() {
                   onClick={() => { log("onboarding.group_select", { groupType: opt.value }); setGroup(opt.value); }}
                   className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
                     group === opt.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                      ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                   }`}
                 >
@@ -608,7 +554,7 @@ export default function OnboardingPage() {
                   onClick={() => { log("onboarding.child_age_toggle", { age: String(opt.value) }); toggleChildAge(opt.value); }}
                   className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
                     childAges.includes(opt.value)
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                      ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                   }`}
                 >
@@ -636,7 +582,7 @@ export default function OnboardingPage() {
                   onClick={() => { log("onboarding.chase_select", { value: opt.value }); setChase(opt.value); }}
                   className={`w-full text-left px-5 py-3 rounded-xl border-2 transition-all ${
                     chase === opt.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                      ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                   }`}
                 >
@@ -664,7 +610,7 @@ export default function OnboardingPage() {
                   onClick={() => { log("onboarding.trigger_toggle", { trigger: opt.value }); toggleTrigger(opt.value); }}
                   className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
                     triggers.includes(opt.value)
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                      ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                   }`}
                 >
@@ -695,7 +641,7 @@ export default function OnboardingPage() {
                   onClick={() => { log("onboarding.experience_select", { level: opt.value }); setExperience(opt.value); }}
                   className={`w-full text-left px-5 py-3 rounded-xl border-2 transition-all ${
                     experience === opt.value
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                      ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                       : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                   }`}
                 >
@@ -759,7 +705,7 @@ export default function OnboardingPage() {
                       onClick={() => selectPersonaOverride(p.id)}
                       className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
                         detectedPersona.primary === p.id
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                          ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500/20 shadow-sm"
                           : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                       }`}
                     >
@@ -784,84 +730,6 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 10: Confirmation */}
-        {step === "confirm" && (
-          <div className="space-y-4">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Here&apos;s what we found</h1>
-              <p className="text-sm lg:text-base text-gray-500 dark:text-slate-400 mt-1">
-                {loadingRecs
-                  ? "Finding your resorts..."
-                  : recommendations
-                    ? recommendations.summary
-                    : recsError
-                      ? `Resorts within ${radiusOptions.find((r) => r.value === radius)?.label || "2 hours"} of ${location}.`
-                      : "Finding your resorts..."}
-              </p>
-            </div>
-
-            {loadingRecs && (
-              <div className="flex flex-col items-center py-4 gap-3">
-                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-gray-500 dark:text-slate-400">Analyzing resorts for you...</p>
-              </div>
-            )}
-
-            {!loadingRecs && recommendations && (
-              <div className="space-y-2">
-                {recommendations.recommendations.map((r) => (
-                  <div
-                    key={r.slug}
-                    className="px-4 py-2.5 bg-gray-50 dark:bg-slate-800 rounded-xl"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm lg:text-base font-medium text-gray-900 dark:text-white">{r.name}</span>
-                      <span className="text-[10px] lg:text-xs px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 font-medium">
-                        {r.passType}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">{r.reason}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {!loadingRecs && recsError && (
-              <div className="text-center py-4">
-                <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
-                  We couldn&apos;t load personalized recommendations right now.
-                </p>
-                <button
-                  onClick={fetchRecommendations}
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  Try again
-                </button>
-              </div>
-            )}
-
-            {detectedPersona && (
-              <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl">
-                <span className="text-2xl">{getPersonaInfoV2(detectedPersona.primary).emoji}</span>
-                <div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {getPersonaInfoV2(detectedPersona.primary).label}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400">
-                    {getPersonaInfoV2(detectedPersona.primary).focus}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!loadingRecs && recommendations && recommendations.totalMatching > recommendations.recommendations.length && (
-              <p className="text-xs lg:text-sm text-gray-400 dark:text-slate-500 text-center">
-                We&apos;re also monitoring {recommendations.totalMatching - recommendations.recommendations.length} other
-                nearby resorts and will let you know when they&apos;re worth a look.
-              </p>
-            )}
-          </div>
-        )}
         </div>
       </div>
 
@@ -881,7 +749,7 @@ export default function OnboardingPage() {
               disabled={isNextDisabled()}
               className="w-full py-3.5 bg-blue-600 text-white text-sm lg:text-base font-semibold rounded-xl disabled:opacity-30 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
             >
-              {step === "confirm" ? "Show me where to ski" : "Continue"}
+              Continue
             </button>
           )}
         </div>

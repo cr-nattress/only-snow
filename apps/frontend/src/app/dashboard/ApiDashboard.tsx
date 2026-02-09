@@ -9,6 +9,7 @@ import ResortTable from "@/components/ResortTable";
 import AiAnalysis from "@/components/ExpertTake";
 import { usePreferences } from "@/context/PreferencesContext";
 import { driveMinutesToMiles } from "@/lib/geocode";
+import { useLoadingTimeout } from "@/hooks/useLoadingTimeout";
 
 const ResortMap = dynamic(() => import("@/components/ResortMap"), { ssr: false });
 
@@ -16,10 +17,13 @@ export default function ApiDashboard() {
   const { preferences } = usePreferences();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | undefined>();
+  const { isTimedOut } = useLoadingTimeout(loading);
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setError(false);
 
     // Use stored coordinates from onboarding (no geocoding needed)
     let lat = preferences.lat;
@@ -48,11 +52,14 @@ export default function ApiDashboard() {
           : undefined,
       });
       setData(result);
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-      // Fall back to unfiltered
-      const result = await fetchDashboardData();
-      setData(result);
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+      try {
+        const result = await fetchDashboardData();
+        setData(result);
+      } catch {
+        setError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -61,6 +68,24 @@ export default function ApiDashboard() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  if (error || (loading && isTimedOut)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-center px-6">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            Having trouble loading. Check your connection or try again.
+          </p>
+          <button
+            onClick={loadData}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading || !data) {
     return (

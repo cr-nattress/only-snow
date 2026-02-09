@@ -25,7 +25,9 @@ export class OnlySnowApiClient {
   }
 
   private async request<T>(path: string): Promise<T> {
-    const res = await this.fetch(`${this.baseUrl}${path}`);
+    const res = await this.fetch(`${this.baseUrl}${path}`, {
+      signal: AbortSignal.timeout(10_000),
+    });
     if (!res.ok) {
       throw new Error(`API request failed: ${res.status} ${res.statusText}`);
     }
