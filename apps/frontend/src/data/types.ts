@@ -161,6 +161,9 @@ export interface ChaseRegion {
   driveMinutes?: number | null;
   driveDisplay?: string;
   chaseScore?: number;
+  passTypes: string[];
+  hasUserPass: boolean;
+  snowfallNumeric: number;
 }
 
 export interface TripPlan {

@@ -34,11 +34,16 @@ function RegionCard({ region, onSelect }: { region: ChaseRegion; onSelect: (r: C
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             {config.icon && <span className="text-sm">{config.icon}</span>}
             <span className={`text-[10px] lg:text-xs font-bold tracking-wide ${config.text}`}>
               {config.label}
             </span>
+            {region.hasUserPass && (
+              <span className="text-[10px] lg:text-xs px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 font-medium">
+                YOUR PASS
+              </span>
+            )}
             {region.driveDisplay && (
               <span className="text-[10px] lg:text-xs px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium">
                 {region.driveDisplay} drive
@@ -76,6 +81,10 @@ export default function ApiChasePage() {
   const [withinReach, setWithinReach] = useState<ChaseRegion[]>([]);
   const [worthTheTrip, setWorthTheTrip] = useState<ChaseRegion[]>([]);
   const [fallbackRegions, setFallbackRegions] = useState<ChaseRegion[]>([]);
+  const [hiddenRegions, setHiddenRegions] = useState<ChaseRegion[]>([]);
+  const [hiddenQuietCount, setHiddenQuietCount] = useState(0);
+  const [totalRegionCount, setTotalRegionCount] = useState(0);
+  const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const { isTimedOut } = useLoadingTimeout(loading);
@@ -86,10 +95,12 @@ export default function ApiChasePage() {
 
   const hasTiers = withinReach.length > 0 || worthTheTrip.length > 0;
   const isChaseUnwilling = preferences.chaseWillingness === 'no';
+  const hasHiddenContent = hiddenRegions.length > 0 || hiddenQuietCount > 0;
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(false);
+    setShowAll(false);
 
     const lat = preferences.lat;
     const lng = preferences.lng;
@@ -103,10 +114,14 @@ export default function ApiChasePage() {
         lat,
         lng,
         chaseWillingness: preferences.chaseWillingness,
+        passType: preferences.passType,
       });
       setWithinReach(data.withinReach);
       setWorthTheTrip(data.worthTheTrip);
       setFallbackRegions(data.regions);
+      setHiddenRegions(data.hiddenRegions);
+      setHiddenQuietCount(data.hiddenQuietCount);
+      setTotalRegionCount(data.totalRegionCount);
     } catch (err) {
       console.error('Failed to load chase page data:', err);
       try {
@@ -114,13 +129,16 @@ export default function ApiChasePage() {
         setFallbackRegions(data.regions);
         setWithinReach([]);
         setWorthTheTrip([]);
+        setHiddenRegions(data.hiddenRegions);
+        setHiddenQuietCount(data.hiddenQuietCount);
+        setTotalRegionCount(data.totalRegionCount);
       } catch {
         setError(true);
       }
     } finally {
       setLoading(false);
     }
-  }, [preferences.location, preferences.lat, preferences.lng, preferences.chaseWillingness]);
+  }, [preferences.location, preferences.lat, preferences.lng, preferences.chaseWillingness, preferences.passType]);
 
   useEffect(() => {
     loadData();
@@ -170,6 +188,11 @@ export default function ApiChasePage() {
       </div>
     );
   }
+
+  const visibleRegionCount = hasTiers
+    ? withinReach.length + worthTheTrip.length
+    : fallbackRegions.length;
+  const showAllLabel = `Show all ${totalRegionCount} regions`;
 
   return (
     <div className="min-h-screen">
@@ -227,7 +250,9 @@ export default function ApiChasePage() {
             <h3 className="text-xs lg:text-sm font-bold tracking-wide text-gray-500 dark:text-slate-400 mb-1">
               NEXT 10 DAYS &mdash; WHERE&apos;S THE SNOW?
             </h3>
-            <p className="text-[10px] lg:text-xs text-gray-400 dark:text-slate-500">Tap a region for resort-level detail</p>
+            <p className="text-[10px] lg:text-xs text-gray-400 dark:text-slate-500">
+              Showing {visibleRegionCount} of {totalRegionCount} regions &middot; Tap a region for resort-level detail
+            </p>
           </div>
 
           {hasTiers ? (
@@ -265,14 +290,75 @@ export default function ApiChasePage() {
                   <p className="text-sm text-gray-500 dark:text-slate-400">No significant storms in the forecast.</p>
                 </div>
               )}
+
+              {/* Show all button (tiered) */}
+              {hasHiddenContent && !showAll && (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="w-full py-3 text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                >
+                  {showAllLabel}
+                  {hiddenQuietCount > 0 && (
+                    <span className="text-gray-500 dark:text-slate-500 font-normal">
+                      {' '}({hiddenQuietCount} with no snow hidden)
+                    </span>
+                  )}
+                </button>
+              )}
+
+              {/* Expanded hidden regions (tiered) */}
+              {showAll && hiddenRegions.length > 0 && (
+                <div className="space-y-2 lg:space-y-3">
+                  <h3 className="text-xs lg:text-sm font-bold tracking-wide text-white/80 px-1">
+                    MORE REGIONS
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-3">
+                    {hiddenRegions.map((r) => (
+                      <RegionCard key={r.id} region={r} onSelect={handleSelectRegion} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           ) : (
-            /* Fallback: flat list when no drive data available */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-3">
-              {fallbackRegions.map((r) => (
-                <RegionCard key={r.id} region={r} onSelect={handleSelectRegion} />
-              ))}
-            </div>
+            <>
+              {/* Flat list (no drive data) */}
+              {fallbackRegions.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-3">
+                  {fallbackRegions.map((r) => (
+                    <RegionCard key={r.id} region={r} onSelect={handleSelectRegion} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 px-4 md:px-5 lg:px-6 py-8 text-center">
+                  <p className="text-sm text-gray-500 dark:text-slate-400">No significant storms in the forecast.</p>
+                </div>
+              )}
+
+              {/* Show all button (flat) */}
+              {hasHiddenContent && !showAll && (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="w-full py-3 text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                >
+                  {showAllLabel}
+                  {hiddenQuietCount > 0 && (
+                    <span className="text-gray-500 dark:text-slate-500 font-normal">
+                      {' '}({hiddenQuietCount} with no snow hidden)
+                    </span>
+                  )}
+                </button>
+              )}
+
+              {/* Expanded hidden regions (flat) */}
+              {showAll && hiddenRegions.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 lg:gap-3">
+                  {hiddenRegions.map((r) => (
+                    <RegionCard key={r.id} region={r} onSelect={handleSelectRegion} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

@@ -114,6 +114,7 @@ export interface RegionSummary {
   } | null;
   stormSeverity: 'none' | 'light' | 'moderate' | 'heavy' | 'epic';
   driveMinutes?: number | null;
+  passTypes: string[];
 }
 
 export interface RegionComparison {

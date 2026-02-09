@@ -128,19 +128,62 @@ export async function fetchDashboardData(filters?: DashboardFilters): Promise<Da
 
 // ── Chase page data ─────────────────────────────────────────────────
 
-const WITHIN_REACH_MAX_MINUTES = 10 * 60; // 10 hours
+const WITHIN_REACH_MAX_MINUTES = 6 * 60; // 6 hours
 const WORTH_THE_TRIP_MIN_SNOWFALL = 6; // 6" minimum for Tier 2
+const MAX_VISIBLE_REGIONS = 15;
+const MIN_SNOWFALL_VISIBLE = 1; // Hide 0" regions unless nearby
 
 export interface ChasePageData {
   withinReach: ChaseRegion[];
   worthTheTrip: ChaseRegion[];
-  regions: ChaseRegion[]; // flat list fallback (no location or chaseWillingness='no')
+  regions: ChaseRegion[]; // visible regions (filtered + ranked)
+  hiddenRegions: ChaseRegion[]; // regions behind "show all"
+  hiddenQuietCount: number; // count of 0" regions not shown
+  totalRegionCount: number; // total before filtering
 }
 
 export interface ChaseFilters {
   lat?: number;
   lng?: number;
   chaseWillingness?: string;
+  passType?: string;
+}
+
+/** Score a region for relevance ranking. Higher = more relevant to user. */
+function scoreRegion(r: ChaseRegion): number {
+  let score = r.snowfallNumeric * 2; // Snow is king
+  if (r.hasUserPass) score += 20; // Big bonus for user's pass
+  if (r.driveMinutes != null) {
+    const driveHours = r.driveMinutes / 60;
+    score += Math.max(0, 10 - driveHours); // Proximity bonus (up to 10 pts)
+  }
+  if (r.chaseScore) score += r.chaseScore; // Include existing chase score
+  return score;
+}
+
+/** Filter and rank regions, returning visible + hidden sets. */
+function filterAndRankRegions(regions: ChaseRegion[]): {
+  visible: ChaseRegion[];
+  hidden: ChaseRegion[];
+  hiddenQuietCount: number;
+} {
+  // Separate out zero-snowfall regions (keep nearby ones for context)
+  const meaningful = regions.filter((r) => {
+    if (r.snowfallNumeric >= MIN_SNOWFALL_VISIBLE) return true;
+    if (r.driveMinutes != null && r.driveMinutes <= WITHIN_REACH_MAX_MINUTES) return true;
+    return false;
+  });
+  const quietCount = regions.length - meaningful.length;
+
+  // Score and sort by relevance
+  const scored = meaningful
+    .map((r) => ({ region: r, score: scoreRegion(r) }))
+    .sort((a, b) => b.score - a.score);
+
+  const visible = scored.slice(0, MAX_VISIBLE_REGIONS).map((s) => s.region);
+  const hidden = scored.slice(MAX_VISIBLE_REGIONS).map((s) => s.region);
+
+  return { visible, hidden, hiddenQuietCount: quietCount };
 }
 
 export async function fetchChasePageData(filters?: ChaseFilters): Promise<ChasePageData> {
@@ -155,59 +198,73 @@ export async function fetchChasePageData(filters?: ChaseFilters): Promise<ChaseP
   const regionSummaries = await client.getRegions(
     hasLocation ? { lat: filters!.lat, lng: filters!.lng } : undefined,
   );
-  const regions = toChaseRegions(regionSummaries);
+  const regions = toChaseRegions(regionSummaries, filters?.passType);
+  const totalRegionCount = regions.length;
 
   // If we have drive time data, split into tiers
   const hasDriveData = regions.some((r) => r.driveMinutes != null);
 
   if (hasDriveData) {
     const withinReach: ChaseRegion[] = [];
-    const worthTheTrip: ChaseRegion[] = [];
+    const farRegions: ChaseRegion[] = [];
 
     for (const region of regions) {
       if (region.driveMinutes != null && region.driveMinutes <= WITHIN_REACH_MAX_MINUTES) {
         withinReach.push(region);
       } else {
-        // Tier 2: far away or no drive data — require minimum snowfall
-        const snowfall = parseFloat(region.forecastTotal) || 0;
-        if (snowfall >= WORTH_THE_TRIP_MIN_SNOWFALL) {
-          worthTheTrip.push(region);
-        }
+        farRegions.push(region);
       }
     }
 
-    // Tier 1: sort by chase score (highest first)
-    withinReach.sort((a, b) => (b.chaseScore ?? 0) - (a.chaseScore ?? 0));
+    // Within reach: filter out 0" regions, sort by composite score (pass + chase score)
+    const reachFiltered = withinReach.filter((r) => r.snowfallNumeric >= MIN_SNOWFALL_VISIBLE || r.hasUserPass);
+    reachFiltered.sort((a, b) => scoreRegion(b) - scoreRegion(a));
 
-    // Tier 2: sort by raw snowfall (highest first)
-    worthTheTrip.sort((a, b) => {
-      const snowA = parseFloat(a.forecastTotal) || 0;
-      const snowB = parseFloat(b.forecastTotal) || 0;
-      return snowB - snowA;
-    });
+    // Worth the trip: require minimum snowfall, prefer user's pass, sort by snow
+    const worthTheTrip = farRegions
+      .filter((r) => r.snowfallNumeric >= WORTH_THE_TRIP_MIN_SNOWFALL)
+      .sort((a, b) => {
+        // User's pass first, then by snowfall
+        if (a.hasUserPass !== b.hasUserPass) return a.hasUserPass ? -1 : 1;
+        return b.snowfallNumeric - a.snowfallNumeric;
+      });
+
+    // Count hidden quiet regions
+    const quietInReach = withinReach.length - reachFiltered.length;
+    const quietFar = farRegions.filter((r) => r.snowfallNumeric < MIN_SNOWFALL_VISIBLE).length;
+    const droppedFromWorth = farRegions.length - worthTheTrip.length - quietFar;
+    const hiddenQuietCount = quietInReach + quietFar;
 
     // If chaseWillingness is 'driving', hide Tier 2
     const willingness = filters?.chaseWillingness;
+    const tier2 = willingness === 'driving' ? [] : worthTheTrip;
+
+    // Remaining far regions that didn't make Worth The Trip (1-5" range)
+    const hiddenRegions = farRegions
+      .filter((r) => r.snowfallNumeric >= MIN_SNOWFALL_VISIBLE && r.snowfallNumeric < WORTH_THE_TRIP_MIN_SNOWFALL)
+      .sort((a, b) => b.snowfallNumeric - a.snowfallNumeric);
+
     return {
-      withinReach,
-      worthTheTrip: willingness === 'driving' ? [] : worthTheTrip,
-      regions: [...withinReach, ...worthTheTrip],
+      withinReach: reachFiltered,
+      worthTheTrip: tier2,
+      regions: [...reachFiltered, ...tier2],
+      hiddenRegions,
+      hiddenQuietCount,
+      totalRegionCount,
     };
   }
 
-  // No drive data — fall back to severity-based sort
-  const severityOrder: Record<string, number> = {
-    chase: 0,
-    significant: 1,
-    moderate: 2,
-    quiet: 3,
-  };
-  regions.sort(
-    (a, b) =>
-      (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9),
-  );
+  // No drive data — use smart filtering engine
+  const { visible, hidden, hiddenQuietCount } = filterAndRankRegions(regions);
 
-  return { withinReach: [], worthTheTrip: [], regions };
+  return {
+    withinReach: [],
+    worthTheTrip: [],
+    regions: visible,
+    hiddenRegions: hidden,
+    hiddenQuietCount,
+    totalRegionCount,
+  };
 }
 
 // ── Region comparison ───────────────────────────────────────────────

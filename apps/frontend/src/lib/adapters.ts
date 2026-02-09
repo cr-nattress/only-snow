@@ -210,7 +210,13 @@ export function formatDriveTime(minutes: number): string {
   return `${hours}h ${mins}m`;
 }
 
-export function toChaseRegions(regions: RegionSummary[]): ChaseRegion[] {
+function passMatchesRegion(userPass: string, regionPassTypes: string[]): boolean {
+  if (!userPass || userPass === 'none') return false;
+  if (userPass === 'multi') return regionPassTypes.some((p) => p !== 'independent');
+  return regionPassTypes.some((p) => p === userPass || p === 'both');
+}
+
+export function toChaseRegions(regions: RegionSummary[], userPassType?: string): ChaseRegion[] {
   return regions.map((r) => {
     const driveMinutes = r.driveMinutes ?? null;
     const driveDisplay = driveMinutes != null ? formatDriveTime(driveMinutes) : undefined;
@@ -220,6 +226,9 @@ export function toChaseRegions(regions: RegionSummary[]): ChaseRegion[] {
       driveHours != null && r.totalSnowfall5Day > 0
         ? r.totalSnowfall5Day / (driveHours + 1)
         : undefined;
+
+    const passTypes = r.passTypes ?? [];
+    const hasUserPass = userPassType ? passMatchesRegion(userPassType, passTypes) : false;
 
     return {
       id: String(r.id),
@@ -237,6 +246,9 @@ export function toChaseRegions(regions: RegionSummary[]): ChaseRegion[] {
       driveMinutes,
       driveDisplay,
       chaseScore,
+      passTypes,
+      hasUserPass,
+      snowfallNumeric: r.totalSnowfall5Day,
     };
   });
 }

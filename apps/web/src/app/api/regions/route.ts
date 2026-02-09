@@ -83,8 +83,9 @@ export const GET = withLogging(async function GET(request: NextRequest) {
         let bestResort: RegionSummary['bestResort'] = null;
         let totalSnowfall5Day = 0;
 
-        // Compute minimum drive time among resorts in this region
+        // Compute minimum drive time and collect pass types among resorts in this region
         let minDriveMinutes: number | null = null;
+        const passTypesSet = new Set<string>();
         for (const resort of regionResorts) {
           const snow = snowByResort.get(resort.id) ?? 0;
           totalSnowfall5Day += snow;
@@ -94,6 +95,9 @@ export const GET = withLogging(async function GET(request: NextRequest) {
           const drive = driveByResort.get(resort.id);
           if (drive != null && (minDriveMinutes == null || drive < minDriveMinutes)) {
             minDriveMinutes = drive;
+          }
+          if (resort.passType) {
+            passTypesSet.add(resort.passType);
           }
         }
 
@@ -115,6 +119,7 @@ export const GET = withLogging(async function GET(request: NextRequest) {
           bestResort,
           stormSeverity,
           driveMinutes: minDriveMinutes,
+          passTypes: Array.from(passTypesSet),
         };
       });
     },

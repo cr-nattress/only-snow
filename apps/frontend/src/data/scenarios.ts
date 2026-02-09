@@ -717,6 +717,9 @@ export const chaseRegions: ChaseRegion[] = [
     bestAirport: "MTJ",
     lat: 37.95,
     lng: -107.88,
+    passTypes: ["epic", "ikon"],
+    hasUserPass: false,
+    snowfallNumeric: 24,
   },
   {
     id: "co-central",
@@ -729,6 +732,9 @@ export const chaseRegions: ChaseRegion[] = [
     bestAirport: "DEN",
     lat: 39.64,
     lng: -106.37,
+    passTypes: ["epic", "ikon"],
+    hasUserPass: false,
+    snowfallNumeric: 11,
   },
   {
     id: "ut-cottonwoods",
@@ -741,6 +747,9 @@ export const chaseRegions: ChaseRegion[] = [
     bestAirport: "SLC",
     lat: 40.59,
     lng: -111.64,
+    passTypes: ["ikon"],
+    hasUserPass: false,
+    snowfallNumeric: 8,
   },
   {
     id: "ca-tahoe",
@@ -752,6 +761,9 @@ export const chaseRegions: ChaseRegion[] = [
     description: "Dry pattern continues.",
     lat: 39.20,
     lng: -120.24,
+    passTypes: ["epic", "ikon"],
+    hasUserPass: false,
+    snowfallNumeric: 1,
   },
   {
     id: "pnw",
@@ -763,6 +775,9 @@ export const chaseRegions: ChaseRegion[] = [
     description: "Light refresh.",
     lat: 47.75,
     lng: -121.09,
+    passTypes: ["ikon"],
+    hasUserPass: false,
+    snowfallNumeric: 3,
   },
   {
     id: "poconos",
@@ -774,6 +789,9 @@ export const chaseRegions: ChaseRegion[] = [
     description: "Nor'easter brings snow to the Poconos.",
     lat: 41.05,
     lng: -75.35,
+    passTypes: ["epic", "indy"],
+    hasUserPass: false,
+    snowfallNumeric: 6,
   },
   {
     id: "northern-vermont",
@@ -786,6 +804,9 @@ export const chaseRegions: ChaseRegion[] = [
     bestAirport: "BTV",
     lat: 44.53,
     lng: -72.78,
+    passTypes: ["epic", "ikon"],
+    hasUserPass: false,
+    snowfallNumeric: 10,
   },
   {
     id: "white-mountains",
@@ -798,6 +819,9 @@ export const chaseRegions: ChaseRegion[] = [
     bestAirport: "MHT",
     lat: 44.10,
     lng: -71.45,
+    passTypes: ["epic", "ikon"],
+    hasUserPass: false,
+    snowfallNumeric: 7,
   },
   {
     id: "west-virginia",
@@ -809,6 +833,9 @@ export const chaseRegions: ChaseRegion[] = [
     description: "Light dusting possible.",
     lat: 38.42,
     lng: -79.99,
+    passTypes: ["ikon"],
+    hasUserPass: false,
+    snowfallNumeric: 2,
   },
   {
     id: "catskills",
@@ -821,6 +848,9 @@ export const chaseRegions: ChaseRegion[] = [
     bestAirport: "ALB",
     lat: 42.13,
     lng: -74.25,
+    passTypes: ["epic", "ikon"],
+    hasUserPass: false,
+    snowfallNumeric: 5.5,
   },
   {
     id: "wy-mt",
@@ -832,6 +862,9 @@ export const chaseRegions: ChaseRegion[] = [
     description: "Dry.",
     lat: 43.59,
     lng: -110.83,
+    passTypes: ["ikon"],
+    hasUserPass: false,
+    snowfallNumeric: 1,
   },
 ];
 
