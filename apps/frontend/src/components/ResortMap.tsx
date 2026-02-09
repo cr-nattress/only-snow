@@ -145,11 +145,8 @@ export default function ResortMap({
       ]
     : [39.5, -106]; // Default to Colorado if no data
 
-  // Use different tile layers for light/dark mode
-  // OpenTopoMap for light mode (green terrain), Carto dark for dark mode
-  const tileUrl = isDark
-    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png";
+  // Standard OSM tiles — saturated green geography that works against both light and dark UI
+  const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   return (
     <div className="mx-4 md:mx-6 lg:mx-8 mt-3 h-48 md:h-64 lg:h-80 rounded-xl overflow-hidden border border-white/10 dark:border-gray-700 transition-colors">
@@ -162,7 +159,6 @@ export default function ResortMap({
         attributionControl={false}
       >
         <TileLayer
-          key={isDark ? "dark" : "light"}
           url={tileUrl}
           subdomains={["a", "b", "c"]}
         />

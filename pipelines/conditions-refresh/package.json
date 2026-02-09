@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
     "dev": "tsx src/cli.ts",
+    "discover-webcams": "tsx src/discover-webcams.ts",
+    "sync-snow-reports": "tsx src/sync-snow-reports.ts",
     "bundle": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=deploy/index.js --format=esm --external:@google-cloud/functions-framework"
   },
   "dependencies": {

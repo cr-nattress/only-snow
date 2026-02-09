@@ -1,0 +1,90 @@
+name: Schedule Pipelines
+
+on:
+  schedule:
+    # Conditions: every 4 hours (lift status, snowfall, trail counts)
+    - cron: "0 */4 * * *"
+    # Forecast: twice daily at 5am and 5pm UTC (10pm and 10am MT)
+    - cron: "0 5,17 * * *"
+  workflow_dispatch:
+    inputs:
+      pipeline:
+        description: "Pipeline to run"
+        required: true
+        type: choice
+        options:
+          - all
+          - conditions-refresh
+          - forecast-refresh
+          - snotel-daily
+          - avalanche-daily
+          - road-conditions
+
+concurrency:
+  group: schedule-pipelines
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Trigger conditions-refresh
+        if: >
+          github.event.schedule == '0 */4 * * *' ||
+          github.event.inputs.pipeline == 'conditions-refresh' ||
+          github.event.inputs.pipeline == 'all'
+        run: |
+          gcloud pubsub topics publish onlysnow-conditions-refresh \
+            --message='{"source":"github-actions"}' \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Trigger forecast-refresh
+        if: >
+          github.event.schedule == '0 5,17 * * *' ||
+          github.event.inputs.pipeline == 'forecast-refresh' ||
+          github.event.inputs.pipeline == 'all'
+        run: |
+          gcloud pubsub topics publish onlysnow-forecast-refresh \
+            --message='{"source":"github-actions"}' \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Trigger snotel-daily
+        if: >
+          github.event.schedule == '0 5,17 * * *' ||
+          github.event.inputs.pipeline == 'snotel-daily' ||
+          github.event.inputs.pipeline == 'all'
+        run: |
+          gcloud pubsub topics publish onlysnow-snotel-daily \
+            --message='{"source":"github-actions"}' \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Trigger avalanche-daily
+        if: >
+          github.event.schedule == '0 5,17 * * *' ||
+          github.event.inputs.pipeline == 'avalanche-daily' ||
+          github.event.inputs.pipeline == 'all'
+        run: |
+          gcloud pubsub topics publish onlysnow-avalanche-daily \
+            --message='{"source":"github-actions"}' \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Trigger road-conditions
+        if: >
+          github.event.schedule == '0 */4 * * *' ||
+          github.event.inputs.pipeline == 'road-conditions' ||
+          github.event.inputs.pipeline == 'all'
+        run: |
+          gcloud pubsub topics publish onlysnow-road-conditions \
+            --message='{"source":"github-actions"}' \
+            --project=${{ secrets.GCP_PROJECT_ID }}
