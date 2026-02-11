@@ -91,7 +91,7 @@ export default function ResortRow({ data, rank, userPass, timeWindow, dailyLabel
                   }`}
                 >
                   <div className={`text-xs lg:text-sm font-extrabold tabular-nums ${inches > 0 ? "text-blue-700 dark:text-blue-400" : "text-gray-300 dark:text-gray-600"}`}>
-                    {inches > 0 ? `${inches}"` : "—"}
+                    {inches > 0 ? `${Math.ceil(inches)}"` : "—"}
                   </div>
                 </div>
               ))}

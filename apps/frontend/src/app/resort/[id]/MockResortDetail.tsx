@@ -13,7 +13,7 @@ function ForecastBar({ day, maxSnow }: { day: DailyForecast; maxSnow: number }) 
   return (
     <div className="flex flex-col items-center gap-1 flex-1">
       <span className={`text-[10px] lg:text-xs font-bold tabular-nums ${hasSnow ? "text-blue-600 dark:text-blue-400" : "text-gray-300 dark:text-slate-600"}`}>
-        {day.snowfall > 0 ? `${day.snowfall}"` : "\u2014"}
+        {day.snowfall > 0 ? `${Math.ceil(day.snowfall)}"` : "\u2014"}
       </span>
       <div className="w-full flex items-end justify-center h-16 lg:h-20">
         <div
@@ -114,7 +114,7 @@ export default function MockResortDetail({ id }: { id: string }) {
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 px-3 py-3 text-center transition-colors">
                 <div className="text-lg lg:text-xl font-bold text-blue-600 dark:text-blue-400">
-                  {detail.conditions.snowfall24hr}&quot;
+                  {Math.ceil(detail.conditions.snowfall24hr)}&quot;
                 </div>
                 <div className="text-[10px] lg:text-xs text-gray-500 dark:text-slate-400">Last 24hr</div>
               </div>
@@ -196,7 +196,7 @@ export default function MockResortDetail({ id }: { id: string }) {
                     </div>
                     <div className="flex items-center gap-3 shrink-0 text-xs lg:text-sm">
                       <span className={`font-bold tabular-nums ${day.snowfall > 0 ? "text-blue-600 dark:text-blue-400" : "text-gray-300 dark:text-slate-600"}`}>
-                        {day.snowfall > 0 ? `${day.snowfall}"` : "\u2014"}
+                        {day.snowfall > 0 ? `${Math.ceil(day.snowfall)}"` : "\u2014"}
                       </span>
                       <span className="text-gray-500 dark:text-slate-400 tabular-nums">
                         {day.tempHigh}&deg;/{day.tempLow}&deg;

@@ -73,14 +73,14 @@ export function toResortConditions(
  * We use 7d as the 10-day proxy and estimate 5-day as ~half.
  */
 export function toResortForecasts(snowfall7d: number): ResortForecasts {
-  const est5d = Math.round(snowfall7d * 0.6); // rough 5-day estimate from 7-day
+  const est5d = Math.ceil(snowfall7d * 0.6); // rough 5-day estimate from 7-day
   return {
     '5day': {
       display: est5d > 0 ? `${est5d}"` : '0"',
       sort: est5d,
     },
     '10day': {
-      display: snowfall7d > 0 ? `${Math.round(snowfall7d)}"` : '0"',
+      display: snowfall7d > 0 ? `${Math.ceil(snowfall7d)}"` : '0"',
       sort: snowfall7d,
     },
   };
@@ -149,9 +149,9 @@ export function toStormTracker(
 
   return {
     severity,
-    text: `${top.regionName}: ${Math.round(top.expectedSnowfall)}" expected${dates ? ` ${dates}` : ''}. Best: ${top.bestResort}.`,
+    text: `${top.regionName}: ${Math.ceil(top.expectedSnowfall)}" expected${dates ? ` ${dates}` : ''}. Best: ${top.bestResort}.`,
     region: top.regionName,
-    forecastTotal: `${Math.round(top.expectedSnowfall)}"`,
+    forecastTotal: `${Math.ceil(top.expectedSnowfall)}"`,
     dates,
   };
 }
@@ -234,11 +234,11 @@ export function toChaseRegions(regions: RegionSummary[], userPassType?: string):
       id: String(r.id),
       name: r.name,
       severity: regionSeverityToStormSeverity(r.stormSeverity),
-      forecastTotal: r.totalSnowfall5Day > 0 ? `${Math.round(r.totalSnowfall5Day)}"` : '0"',
+      forecastTotal: r.totalSnowfall5Day > 0 ? `${Math.ceil(r.totalSnowfall5Day)}"` : '0"',
       dates: '', // Backend regions don't carry date ranges
       resorts: r.bestResort ? [r.bestResort.name] : [],
       description: r.bestResort
-        ? `Best: ${r.bestResort.name} (${Math.round(r.bestResort.snowfall5Day)}" in 5 days)`
+        ? `Best: ${r.bestResort.name} (${Math.ceil(r.bestResort.snowfall5Day)}" in 5 days)`
         : `${r.resortCount} resorts`,
       bestAirport: r.bestAirport ?? undefined,
       lat: r.lat,

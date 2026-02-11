@@ -55,7 +55,7 @@ export function useResortRow(
     onPass,
     snowfall24hr,
     has24hrSnow: snowfall24hr > 0,
-    snowfall24hrDisplay: snowfall24hr > 0 ? `${snowfall24hr}"` : "—",
+    snowfall24hrDisplay: snowfall24hr > 0 ? `${Math.ceil(snowfall24hr)}"` : "—",
     forecastDisplay: forecastEntry.display,
     forecastSort: forecastEntry.sort,
     hasSnow: forecastEntry.sort > 0,
